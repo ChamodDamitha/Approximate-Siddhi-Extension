@@ -40,7 +40,6 @@ public class SimilarityTestCase {
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
 
         siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
-            long cardinality;
 
             @Override
             public void receive(Event[] events) {

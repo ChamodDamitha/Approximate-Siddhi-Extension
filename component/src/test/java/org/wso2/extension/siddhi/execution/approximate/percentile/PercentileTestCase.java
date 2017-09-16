@@ -1,4 +1,4 @@
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.percentile;
 
 
 import org.apache.log4j.Logger;
@@ -12,8 +12,8 @@ import org.wso2.siddhi.core.stream.input.InputHandler;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
 import org.wso2.siddhi.core.util.EventPrinter;
 
-public class CardinalityTestCase {
-    static final Logger LOG = Logger.getLogger(CardinalityTestCase.class);
+public class PercentileTestCase {
+    static final Logger LOG = Logger.getLogger(PercentileTestCase.class);
     private volatile int count;
     private volatile boolean eventArrived;
 
@@ -24,36 +24,37 @@ public class CardinalityTestCase {
     }
 
     @Test
-    public void testApproximateCardinality() throws InterruptedException {
+    public void testApproximatePercentile() throws InterruptedException {
         final int noOfEvents = 1000;
         final double accuracy = 0.3;
+        final double percentilePosition = 0.5;
 
-        LOG.info("Approximate Cardinality Test Case");
+        LOG.info("Approximate Percentile Test Case");
         SiddhiManager siddhiManager = new SiddhiManager();
 
-        String inStreamDefinition = "define stream inputStream (number int);";
+        String inStreamDefinition = "define stream inputStream (number float);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#approximate:cardinality(number, " + accuracy + ") " +
-                "select cardinality " +
+                "from inputStream#approximate:percentile(number, " + percentilePosition + ", " + accuracy + ") " +
+                "select * " +
                 "insert into outputStream;");
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
 
         siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
-            long cardinality;
+            double percentile;
 
             @Override
             public void receive(Event[] events) {
                 EventPrinter.print(events);
                 for (Event event : events) {
-                    count++;
-                    cardinality = (long) event.getData(0);
-                    if (count >= (cardinality - cardinality * accuracy)
-                            && count <= (cardinality + cardinality * accuracy)) {
+                    percentile = (double) event.getData(1);
+                    if (count/2.0 >= (percentile - percentile * accuracy)
+                            && count/2.0 <= (percentile + percentile * accuracy)) {
                         Assert.assertEquals(true, true);
                     } else {
                         Assert.assertEquals(true, false);
                     }
+                    count++;
                 }
                 eventArrived = true;
             }
@@ -62,7 +63,7 @@ public class CardinalityTestCase {
         InputHandler inputHandler = siddhiAppRuntime.getInputHandler("inputStream");
         siddhiAppRuntime.start();
 
-        for (double j = 0; j < noOfEvents; j++) {
+        for (float j = 0; j < noOfEvents; j++) {
             inputHandler.send(new Object[]{j});
         }
 
