@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.similarity;
 
 import org.apache.log4j.Logger;
 import org.wso2.siddhi.annotation.Example;
@@ -43,80 +43,92 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 /**
- * performs HyperLogLog algorithm to get approximate cardinality
+ * performs Minhash algorithm to get approximate similarity
  */
 @Extension(
-        name = "cardinality",
+        name = "similarity",
         namespace = "approximate",
-        description = "Performs HyperLogLog algorithm on a streaming data set based on a specific accuracy. ",
+        description = "Performs Minhash algorithm on a streaming data set based on a specific accuracy. ",
         parameters = {
                 @Parameter(
-                        name = "value",
-                        description = "The value used to find cardinality",
+                        name = "value1",
+                        description = "The first value to calculate similarity",
+                        type = {DataType.INT, DataType.DOUBLE, DataType.FLOAT, DataType.LONG, DataType.STRING,
+                                DataType.BOOL, DataType.TIME, DataType.OBJECT}
+                ),
+                @Parameter(
+                        name = "value2",
+                        description = "The second value to calculate similarity",
                         type = {DataType.INT, DataType.DOUBLE, DataType.FLOAT, DataType.LONG, DataType.STRING,
                                 DataType.BOOL, DataType.TIME, DataType.OBJECT}
                 ),
                 @Parameter(
                         name = "accuracy",
-                        description = "this is the accuracy for which the cardinality is obtained",
+                        description = "this is the accuracy for which the similarity is obtained",
                         type = {DataType.DOUBLE}
                 )
         },
         returnAttributes = {
                 @ReturnAttribute(
-                        name = "cardinality",
-                        description = "Represents the cardinality after the event arrived",
-                        type = {DataType.LONG}
+                        name = "similarity",
+                        description = "Represents the similarity of value1 and value2 after the event arrived",
+                        type = {DataType.DOUBLE}
                 )
         },
         examples = {
                 @Example(
-                        syntax = "define stream InputStream (some_attribute int);" +
-                                "from InputStream#approximate:cardinality(some_attribute, 0.01)\n" +
-                                "select cardinality\n" +
+                        syntax = "define stream InputStream (attribute_1 int, attribute_2 int);" +
+                                "from InputStream#approximate:similarity(attribute_1, attribute_2, 0.01)\n" +
+                                "select similarity\n" +
                                 "insert into OutputStream;",
-                        description = "cardinality of events based on some_attribute is " +
-                                "calculated for an accuracy of 0.01"
+                        description = "similarity of value1 and value2 is calculated for an accuracy of 0.01"
                 ),
         }
 )
-public class CardinalityExtension extends StreamProcessor {
-    private static final Logger logger = Logger.getLogger(CardinalityExtension.class.getName());
+public class SimilarityExtension extends StreamProcessor {
+    private static final Logger logger = Logger.getLogger(SimilarityExtension.class.getName());
     private double accuracy = 0.01;
-    private HyperLogLog hyperLogLog;
+    private MinHash minHash;
 
     @Override
     protected List<Attribute> init(AbstractDefinition inputDefinition,
                                    ExpressionExecutor[] attributeExpressionExecutors, ConfigReader configReader,
                                    SiddhiAppContext siddhiAppContext) {
-//       validate number of attributes
-        if (attributeExpressionExecutors.length != 2) {
-            throw new SiddhiAppCreationException("2 attributes are expected but " +
+//      validate number of attributes
+        if (attributeExpressionExecutors.length != 3) {
+            throw new SiddhiAppCreationException("3 attributes are expected but " +
                     attributeExpressionExecutors.length + " attributes are found inside the cardinality function");
         }
 
-        //expressionExecutors[1] --> accurracy
-        if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
+//      expressionExecutors[1] --> accurracy
+        if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
             throw new SiddhiAppCreationException("accuracy has to be a constant but found " +
-                    this.attributeExpressionExecutors[1].getClass().getCanonicalName());
+                    this.attributeExpressionExecutors[2].getClass().getCanonicalName());
         }
 
-        if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
-            accuracy = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
+        if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
+            accuracy = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
         } else {
-            throw new SiddhiAppCreationException("accuracy should be of type Double but found " +
+            throw new SiddhiAppCreationException("accuracy must be of type Double but found " +
                     attributeExpressionExecutors[1].getReturnType());
         }
 
         if ((accuracy <= 0) || (accuracy >= 1)) {
-            throw new SiddhiAppCreationException("accuracy must be in the range of (0, 1)");
+            throw new SiddhiAppCreationException("accuracy must be in the range of (0, 1) but found " + accuracy);
         }
 
-        hyperLogLog = new HyperLogLog(accuracy);
+//      validate first and second attributes
+        if (attributeExpressionExecutors[0].getReturnType() != attributeExpressionExecutors[1].getReturnType()) {
+            throw new SiddhiAppCreationException("first and second attributes inside similarity function" +
+                    " must be of same type");
+        }
+
+        minHash = new MinHash(accuracy);
 
         List<Attribute> attributeList = new ArrayList<>(1);
-        attributeList.add(new Attribute("cardinality", Attribute.Type.LONG));
+        attributeList.add(new Attribute("similarity", Attribute.Type.DOUBLE));
         return attributeList;
     }
 
@@ -126,9 +138,10 @@ public class CardinalityExtension extends StreamProcessor {
         synchronized (this) {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
-                Object newData = attributeExpressionExecutors[0].execute(streamEvent);
-                hyperLogLog.addItem(newData);
-                Object[] outputData = {hyperLogLog.getCardinality()};
+                Object value1 = attributeExpressionExecutors[0].execute(streamEvent);
+                Object value2 = attributeExpressionExecutors[1].execute(streamEvent);
+                minHash.addProperty(value1, value2);
+                Object[] outputData = {minHash.getSimilarity()};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
@@ -155,9 +168,9 @@ public class CardinalityExtension extends StreamProcessor {
     public Map<String, Object> currentState() {
         synchronized (this) {
             Map<String, Object> map = new HashMap();
-            map.put("hyperLogLog", hyperLogLog);
+            map.put("minHash", minHash);
             map.put("accuracy", accuracy);
-            logger.debug("storing hyperLogLog");
+            logger.debug("storing minHash");
             return map;
         }
     }
@@ -166,7 +179,7 @@ public class CardinalityExtension extends StreamProcessor {
     public void restoreState(Map<String, Object> map) {
         synchronized (this) {
             accuracy = (Double) map.get("accuracy");
-            hyperLogLog = (HyperLogLog) map.get("hyperLogLog");
+            minHash = (MinHash) map.get("minHash");
         }
     }
 }

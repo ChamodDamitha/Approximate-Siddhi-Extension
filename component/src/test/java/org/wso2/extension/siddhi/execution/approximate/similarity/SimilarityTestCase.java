@@ -1,4 +1,4 @@
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.similarity;
 
 
 import org.apache.log4j.Logger;
@@ -12,8 +12,8 @@ import org.wso2.siddhi.core.stream.input.InputHandler;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
 import org.wso2.siddhi.core.util.EventPrinter;
 
-public class CardinalityTestCase {
-    static final Logger LOG = Logger.getLogger(CardinalityTestCase.class);
+public class SimilarityTestCase {
+    static final Logger LOG = Logger.getLogger(SimilarityTestCase.class);
     private volatile int count;
     private volatile boolean eventArrived;
 
@@ -24,17 +24,17 @@ public class CardinalityTestCase {
     }
 
     @Test
-    public void testApproximateCardinality() throws InterruptedException {
+    public void testApproximateSimilarity() throws InterruptedException {
         final int noOfEvents = 1000;
         final double accuracy = 0.3;
 
-        LOG.info("Approximate Cardinality Test Case");
+        LOG.info("Approximate Similarity Test Case");
         SiddhiManager siddhiManager = new SiddhiManager();
 
-        String inStreamDefinition = "define stream inputStream (number int);";
+        String inStreamDefinition = "define stream inputStream (attribute_1 int, attribute_2 int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#approximate:cardinality(number, " + accuracy + ") " +
-                "select cardinality " +
+                "from inputStream#approximate:similarity(attribute_1, attribute_2, " + accuracy + ") " +
+                "select * " +
                 "insert into outputStream;");
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
@@ -47,13 +47,6 @@ public class CardinalityTestCase {
                 EventPrinter.print(events);
                 for (Event event : events) {
                     count++;
-                    cardinality = (long) event.getData(0);
-                    if (cardinality >= (cardinality - cardinality * accuracy)
-                            && cardinality <= (cardinality + cardinality * accuracy)) {
-                        Assert.assertEquals(true, true);
-                    } else {
-                        Assert.assertEquals(true, false);
-                    }
                 }
                 eventArrived = true;
             }
@@ -63,7 +56,7 @@ public class CardinalityTestCase {
         siddhiAppRuntime.start();
 
         for (double j = 0; j < noOfEvents; j++) {
-            inputHandler.send(new Object[]{j});
+            inputHandler.send(new Object[]{j + 1, j});
         }
 
         Thread.sleep(100);
