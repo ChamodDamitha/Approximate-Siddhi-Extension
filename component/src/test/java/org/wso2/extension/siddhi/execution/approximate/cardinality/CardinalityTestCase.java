@@ -25,8 +25,8 @@ public class CardinalityTestCase {
 
     @Test
     public void testApproximateCardinality() throws InterruptedException {
-        final int noOfEvents = 1000;
-        final double accuracy = 0.3;
+        final int noOfEvents = 100000;
+        final double accuracy = 0.05;
 
         LOG.info("Approximate Cardinality Test Case");
         SiddhiManager siddhiManager = new SiddhiManager();
@@ -44,16 +44,20 @@ public class CardinalityTestCase {
 
             @Override
             public void receive(Event[] events) {
-                EventPrinter.print(events);
+//                EventPrinter.print(events);
                 for (Event event : events) {
                     count++;
                     cardinality = (long) event.getData(0);
-                    if (count >= (cardinality - cardinality * accuracy)
-                            && count <= (cardinality + cardinality * accuracy)) {
+                    if (count >= Math.floor(cardinality - cardinality * accuracy)
+                            && count <= Math.ceil(cardinality + cardinality * accuracy)) {
                         Assert.assertEquals(true, true);
                     } else {
                         Assert.assertEquals(true, false);
+//                        System.out.println("count : " + count + ", cardinality : " + cardinality);
+//                        System.out.println("error : " + ((double) (count - cardinality) / cardinality));
                     }
+
+                    System.out.println("count : " + count + ", cardinality : " + cardinality);
                 }
                 eventArrived = true;
             }

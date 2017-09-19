@@ -54,8 +54,8 @@ public class SimilarityTestCase {
         InputHandler inputHandler = siddhiAppRuntime.getInputHandler("inputStream");
         siddhiAppRuntime.start();
 
-        for (double j = 0; j < noOfEvents; j++) {
-            inputHandler.send(new Object[]{j + 1, j});
+        for (int j = 0; j < noOfEvents; j++) {
+            inputHandler.send(new Object[]{j%2, j%3});
         }
 
         Thread.sleep(100);

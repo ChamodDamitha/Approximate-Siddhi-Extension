@@ -24,11 +24,13 @@ package org.wso2.extension.siddhi.execution.approximate.cardinality;
  */
 public class HyperLogLog<E> {
 
-    private final double errorFactor = 1.04;
+    private final double standardError = 1.04;
     private int noOfBuckets;
     private int lengthOfBucketId;
     private int[] countArray;
     private double estimationFactor;
+
+    private double specifiedAccuracy;
 
     /**
      * Create a new HyperLogLog by specifying the accuracy
@@ -38,15 +40,22 @@ public class HyperLogLog<E> {
      */
     public HyperLogLog(double accuracy) {
 
-//      accuracy = errorFactor / sqrt(noOfBuckets) = > noOfBuckets = (errorFactor / accuracy) ^ 2
-        noOfBuckets = (int) Math.ceil(Math.pow(errorFactor / accuracy, 2));
+        this.specifiedAccuracy = accuracy;
+
+//      95% of time answer lie within [answer +- 2 * accuracy * answer]
+        accuracy = specifiedAccuracy / 2;
+
+//      accuracy = standardError / sqrt(noOfBuckets) = > noOfBuckets = (standardError / accuracy) ^ 2
+        noOfBuckets = (int) Math.ceil(Math.pow(standardError / accuracy, 2));
 
         lengthOfBucketId = (int) Math.ceil(Math.log(noOfBuckets) / Math.log(2));
 
         noOfBuckets = (1 << lengthOfBucketId);
-        if (noOfBuckets <= 0) {
-            throw new IllegalArgumentException("accuracy value must be increased above " + accuracy);
+
+        if (lengthOfBucketId < 4) {
+            throw new IllegalArgumentException("a higher error margin of " + accuracy + " cannot be achieved");
         }
+
         countArray = new int[noOfBuckets];
 
         estimationFactor = getEstimationFactor(lengthOfBucketId, noOfBuckets);
@@ -54,12 +63,12 @@ public class HyperLogLog<E> {
 
     /**
      * Compute the accuracy using the count array size
-     * accuracy = errorFactor / sqrt(noOfBuckets)
+     * accuracy = standardError / sqrt(noOfBuckets)
      *
      * @return the accuracy value
      */
     public double getAccuracy() {
-        return (errorFactor / Math.sqrt(noOfBuckets));
+        return (standardError / Math.sqrt(noOfBuckets));
     }
 
     /**
@@ -99,7 +108,6 @@ public class HyperLogLog<E> {
 //      then instead return −32⋅log(V/32), where V is the number of buckets with max-leading-zero count = 0.
 //      threshold of 2.5x comes from the recommended load factor for Linear Counting
         if ((estimatedCardinality < 2.5 * noOfBuckets) && noOfZeroBuckets > 0) {
-//            cardinality =  (long)(noOfBuckets * Math.log((double) noOfBuckets / noOfZeroBuckets));
             cardinality = (int) (-noOfBuckets * Math.log((double) noOfZeroBuckets / noOfBuckets));
         } else if (estimatedCardinality > (pow2to32 / 30.0)) {
             //       if E > 2 ^ (32) / 30 : return −2 ^ (32) * log(1 − E / 2 ^ (32))
@@ -118,10 +126,9 @@ public class HyperLogLog<E> {
      */
     public long[] getConfidenceInterval() {
         long cardinality = getCardinality();
-        double accuracy = getAccuracy();
         long[] confidenceInterval = new long[2];
-        confidenceInterval[0] = (long) Math.floor(cardinality - (cardinality * accuracy));
-        confidenceInterval[1] = (long) Math.ceil(cardinality + (cardinality * accuracy));
+        confidenceInterval[0] = (long) Math.floor(cardinality - (cardinality * specifiedAccuracy));
+        confidenceInterval[1] = (long) Math.ceil(cardinality + (cardinality * specifiedAccuracy));
         return confidenceInterval;
     }
 
