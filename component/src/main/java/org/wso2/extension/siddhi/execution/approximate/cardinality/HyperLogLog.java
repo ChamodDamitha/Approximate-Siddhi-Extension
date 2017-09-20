@@ -28,6 +28,8 @@ public class HyperLogLog<E> {
     private int noOfBuckets;
     private int lengthOfBucketId;
     private int[] countArray;
+    private CountQueue[] pastCountsArray;
+
     private double estimationFactor;
 
     private double specifiedAccuracy;
@@ -57,6 +59,7 @@ public class HyperLogLog<E> {
         }
 
         countArray = new int[noOfBuckets];
+        pastCountsArray = new CountQueue[noOfBuckets];
 
         estimationFactor = getEstimationFactor(lengthOfBucketId, noOfBuckets);
     }
