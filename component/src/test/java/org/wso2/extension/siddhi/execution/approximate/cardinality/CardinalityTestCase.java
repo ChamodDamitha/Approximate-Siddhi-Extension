@@ -26,7 +26,7 @@ public class CardinalityTestCase {
     @Test
     public void testApproximateCardinality() throws InterruptedException {
         final int noOfEvents = 100;
-        final double accuracy = 0.05;
+        final double accuracy = 0.01;
 
         LOG.info("Approximate Cardinality Test Case");
         SiddhiManager siddhiManager = new SiddhiManager();
@@ -41,23 +41,33 @@ public class CardinalityTestCase {
 
         siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
             long cardinality;
+            long realCardinality;
 
             @Override
             public void receive(Event[] events) {
 //                EventPrinter.print(events);
                 for (Event event : events) {
                     count++;
+                    if (count < 8) {
+                        realCardinality = count;
+                    } else if (count < 52) {
+                        realCardinality = 7;
+                    } else if (count < 58) {
+                        realCardinality = 52 + 6 - count;
+                    } else {
+                        realCardinality = 1;
+                    }
                     cardinality = (long) event.getData(0);
-                    if (count >= Math.floor(cardinality - cardinality * accuracy)
-                            && count <= Math.ceil(cardinality + cardinality * accuracy)) {
+                    if (realCardinality >= Math.floor(cardinality - cardinality * accuracy)
+                            && realCardinality <= Math.ceil(cardinality + cardinality * accuracy)) {
                         Assert.assertEquals(true, true);
                     } else {
-//                        Assert.assertEquals(true, false);
-//                        System.out.println("count : " + count + ", cardinality : " + cardinality);
+//                        System.out.println("realCardinality : " + realCardinality + ", cardinality : " + cardinality);
+                        Assert.assertEquals(true, false);
 //                        System.out.println("error : " + ((double) (count - cardinality) / cardinality));
                     }
 
-                    System.out.println("count : " + count + ", cardinality : " + cardinality);
+                    System.out.println("realCardinality : " + realCardinality + ", cardinality : " + cardinality);
                 }
                 eventArrived = true;
             }
@@ -67,7 +77,7 @@ public class CardinalityTestCase {
         siddhiAppRuntime.start();
 
         for (double j = 0; j < 50; j++) {
-            inputHandler.send(new Object[]{j%10});
+            inputHandler.send(new Object[]{j % 10});
         }
 
         for (double j = 0; j < 50; j++) {
