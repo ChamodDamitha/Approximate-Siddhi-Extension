@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class CountQueue {
 
-    ArrayList<Long> counts;
+    ArrayList<Integer> counts;
 
     public CountQueue() {
         counts = new ArrayList<>();
@@ -15,7 +15,7 @@ public class CountQueue {
      * @param newValue
      * @return
      */
-    public boolean add(long newValue) {
+    public boolean add(int newValue) {
         if (counts.size() > 0) {
             long lastValue = counts.get(counts.size() - 1);
             if (lastValue > newValue) {
@@ -34,7 +34,7 @@ public class CountQueue {
      * @return the next value if the removed value is the first value,
      * -1 if no value is returned
      */
-    public long remove(long value) {
+    public int remove(int value) {
         if (counts.size() > 0) {
             if(counts.get(0)==value){
                 counts.remove(0);

@@ -60,6 +60,9 @@ public class HyperLogLog<E> {
 
         countArray = new int[noOfBuckets];
         pastCountsArray = new CountQueue[noOfBuckets];
+        for (int i = 0; i < noOfBuckets; i++) {
+            pastCountsArray[i] = new CountQueue();
+        }
 
         estimationFactor = getEstimationFactor(lengthOfBucketId, noOfBuckets);
     }
@@ -155,6 +158,27 @@ public class HyperLogLog<E> {
     }
 
     /**
+     * Removes the given item from the array and restore the cardinality value by using the previous count
+     * @param item
+     */
+    public void removeItem(E item){
+        int hash = getHashValue(item);
+
+//      Shift all the bits to right till only the bucket ID is left
+        int bucketId = hash >>> (Integer.SIZE - lengthOfBucketId);
+
+//      Shift all the bits to left till the bucket id is removed
+        int remainingValue = hash << lengthOfBucketId;
+
+        int noOfLeadingZeros = Integer.numberOfLeadingZeros(remainingValue) + 1;
+
+        int newLeadingZeroCount = pastCountsArray[bucketId].remove(noOfLeadingZeros);
+        if(newLeadingZeroCount >= 0) {
+            countArray[bucketId] = newLeadingZeroCount;
+        }
+    }
+
+    /**
      * Update the zero count value in the relevant bucket if the given value is larger than the existing value
      *
      * @param index            is the bucket ID of the relevant bucket
@@ -165,10 +189,12 @@ public class HyperLogLog<E> {
         long currentZeroCount = countArray[index];
         if (currentZeroCount < leadingZeroCount) {
             countArray[index] = leadingZeroCount;
+            pastCountsArray[index].add(leadingZeroCount);
             return true;
         }
         return false;
     }
+
 
     /**
      * Compute an integer hash value for a given value

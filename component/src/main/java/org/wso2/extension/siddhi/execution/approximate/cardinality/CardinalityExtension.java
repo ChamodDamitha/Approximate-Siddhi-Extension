@@ -25,6 +25,7 @@ import org.wso2.siddhi.annotation.Parameter;
 import org.wso2.siddhi.annotation.ReturnAttribute;
 import org.wso2.siddhi.annotation.util.DataType;
 import org.wso2.siddhi.core.config.SiddhiAppContext;
+import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.ComplexEventChunk;
 import org.wso2.siddhi.core.event.stream.StreamEvent;
 import org.wso2.siddhi.core.event.stream.StreamEventCloner;
@@ -127,7 +128,11 @@ public class CardinalityExtension extends StreamProcessor {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
                 Object newData = attributeExpressionExecutors[0].execute(streamEvent);
-                hyperLogLog.addItem(newData);
+                if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
+                    hyperLogLog.addItem(newData);
+                } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
+                    hyperLogLog.removeItem(newData);
+                }
                 Object[] outputData = {hyperLogLog.getCardinality()};
 
                 if (outputData == null) {

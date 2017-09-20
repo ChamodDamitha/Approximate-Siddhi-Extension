@@ -25,7 +25,7 @@ public class CardinalityTestCase {
 
     @Test
     public void testApproximateCardinality() throws InterruptedException {
-        final int noOfEvents = 100000;
+        final int noOfEvents = 100;
         final double accuracy = 0.05;
 
         LOG.info("Approximate Cardinality Test Case");
@@ -33,7 +33,7 @@ public class CardinalityTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#approximate:cardinality(number, " + accuracy + ") " +
+                "from inputStream#window.length(7)#approximate:cardinality(number, " + accuracy + ") " +
                 "select cardinality " +
                 "insert into outputStream;");
 
@@ -52,7 +52,7 @@ public class CardinalityTestCase {
                             && count <= Math.ceil(cardinality + cardinality * accuracy)) {
                         Assert.assertEquals(true, true);
                     } else {
-                        Assert.assertEquals(true, false);
+//                        Assert.assertEquals(true, false);
 //                        System.out.println("count : " + count + ", cardinality : " + cardinality);
 //                        System.out.println("error : " + ((double) (count - cardinality) / cardinality));
                     }
@@ -66,8 +66,12 @@ public class CardinalityTestCase {
         InputHandler inputHandler = siddhiAppRuntime.getInputHandler("inputStream");
         siddhiAppRuntime.start();
 
-        for (double j = 0; j < noOfEvents; j++) {
-            inputHandler.send(new Object[]{j});
+        for (double j = 0; j < 50; j++) {
+            inputHandler.send(new Object[]{j%10});
+        }
+
+        for (double j = 0; j < 50; j++) {
+            inputHandler.send(new Object[]{10});
         }
 
         Thread.sleep(100);
