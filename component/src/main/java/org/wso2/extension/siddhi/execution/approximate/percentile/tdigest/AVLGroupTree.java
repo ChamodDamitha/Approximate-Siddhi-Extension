@@ -140,7 +140,7 @@ final class AVLGroupTree {
     public void add(double centroid, int count) {
         this.centroid = centroid;
         this.count = count;
-        tree.add();
+        tree.addValue();
     }
 
     /**
@@ -153,7 +153,7 @@ final class AVLGroupTree {
     }
 
     /**
-     * Return the last node whose centroid is less than the given centroid
+     * Return the largest node whose centroid is less than the given centroid
      */
     public int floorNode(double centroid) {
         int floor = AVLTree.NIL;
@@ -170,7 +170,7 @@ final class AVLGroupTree {
     }
 
     /**
-     * Return the last node so that the sum of counts of nodes that are before
+     * Return the largestNode node so that the sum of counts of nodes that are before
      * it is less than or equal to sum
      */
     public int floorSumNode(long sum) {

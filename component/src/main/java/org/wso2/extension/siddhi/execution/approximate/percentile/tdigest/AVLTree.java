@@ -24,8 +24,8 @@ import java.util.Arrays;
 
 
 /**
- * An AVL-tree structure of integers used to effectively insert and search data
- * the time complexity for searching is O(lg(n)), n is the number of nodes
+ * An AVL-tree structure of integers used to effectively insert and search data.
+ * The time complexity for searching is O(lg(n)), n is the number of nodes
  */
 public abstract class AVLTree {
 
@@ -37,7 +37,7 @@ public abstract class AVLTree {
     private int[] parentNodes;
     private int[] leftNodes;
     private int[] rightNodes;
-    private byte[] depths;
+    private int[] depths;
 
     AVLTree(int initialCapacity) {
         nodeAllocator = new NodeAllocator();
@@ -45,7 +45,7 @@ public abstract class AVLTree {
         parentNodes = new int[initialCapacity];
         leftNodes = new int[initialCapacity];
         rightNodes = new int[initialCapacity];
-        depths = new byte[initialCapacity];
+        depths = new int[initialCapacity];
     }
 
     /**
@@ -71,7 +71,9 @@ public abstract class AVLTree {
     }
 
 
-    /** Grow the tree size by 1/8 */
+    /**
+     * Grow the tree size by 1/8
+     */
     static int oversize(int size) {
         return size + (size >>> 3);
     }
@@ -95,28 +97,28 @@ public abstract class AVLTree {
     }
 
     /**
-     * Return the setParentNode Node of the provided node.
+     * Return the parent node of the provided node.
      */
     public int parentNode(int node) {
         return parentNodes[node];
     }
 
     /**
-     * Return the setLeftNode child node of the provided node.
+     * Return the left child node of the provided node.
      */
     public int leftNode(int node) {
         return leftNodes[node];
     }
 
     /**
-     * Return the setRightNode child node of the provided node.
+     * Return the right child node of the provided node.
      */
     public int rightNode(int node) {
         return rightNodes[node];
     }
 
     /**
-     * Return the setDepth of nodes that are stored below node including itself.
+     * Return the depth of nodes that are stored below node including itself.
      */
     public int depth(int node) {
         return depths[node];
@@ -126,12 +128,10 @@ public abstract class AVLTree {
      * Return the least node under node.
      */
     public int leastNode(int node) {
-        while (true) {
-            final int left = leftNode(node);
-            if (left == NIL) {
-                break;
-            }
+        int left = leftNode(node);
+        while (left != NIL) {
             node = left;
+            left = leftNode(node);
         }
         return node;
     }
@@ -139,13 +139,11 @@ public abstract class AVLTree {
     /**
      * Return the largest node under node
      */
-    public int last(int node) {
-        while (true) {
-            final int right = rightNode(node);
-            if (right == NIL) {
-                break;
-            }
+    public int largestNode(int node) {
+        int right = rightNode(node);
+        while (right != NIL) {
             node = right;
+            right = rightNode(node);
         }
         return node;
     }
@@ -153,8 +151,8 @@ public abstract class AVLTree {
     /**
      * Return the least node that is strictly greater than node
      */
-    public final int nextNode(int node) {
-        final int right = rightNode(node);
+    public int nextNode(int node) {
+        int right = rightNode(node);
         if (right != NIL) {
             return leastNode(right);
         } else {
@@ -170,10 +168,10 @@ public abstract class AVLTree {
     /**
      * Return the largest node that is strictly less than node
      */
-    public final int previousNode(int node) {
-        final int left = leftNode(node);
+    public int previousNode(int node) {
+        int left = leftNode(node);
         if (left != NIL) {
-            return last(left);
+            return largestNode(left);
         } else {
             int parent = parentNode(node);
             while (parent != NIL && node == leftNode(parent)) {
@@ -190,7 +188,7 @@ public abstract class AVLTree {
     protected abstract int compare(int node);
 
     /**
-     * Compare data into node
+     * Copy data into node
      */
     protected abstract void copyNewData(int node);
 
@@ -199,7 +197,7 @@ public abstract class AVLTree {
      * Add current data to the tree and return true if a new node was added
      * to the tree or false if not
      */
-    public boolean add() {
+    public boolean addValue() {
 
 //        if the tree is empty
         if (rootNode == NIL) {
@@ -209,7 +207,6 @@ public abstract class AVLTree {
             return true;
         } else { //        tree is not empty
             int node = rootNode;
-//            assert parentNode(rootNode) == NIL;
             int parent; // to track the final node
             int cmp;
             do {
@@ -236,7 +233,6 @@ public abstract class AVLTree {
             if (cmp < 0) {
                 setLeftNode(parent, node);
             } else {
-//                assert cmp > 0;
                 setRightNode(parent, node);
             }
 
@@ -262,7 +258,7 @@ public abstract class AVLTree {
             }
         } else {
             removeNode(node);
-            add();
+            addValue();
         }
     }
 
@@ -332,6 +328,7 @@ public abstract class AVLTree {
 
     /**
      * swap two nodes
+     *
      * @param node1
      * @param node2
      */
@@ -406,6 +403,7 @@ public abstract class AVLTree {
 
     /**
      * calculate the difference of depths of left sub tree and right sub tree
+     *
      * @param node
      * @return the difference of depths
      */
@@ -416,6 +414,7 @@ public abstract class AVLTree {
 
     /**
      * rebalance the tree to minimize the difference of depths between right and left sub trees
+     *
      * @param node arround which the rebalancing occurs
      */
     private void rebalance(int node) {
@@ -425,6 +424,7 @@ public abstract class AVLTree {
             fixAggregateCounts(n);
 
             switch (balanceFactor(n)) {
+//              right sub tree is deeper
                 case -2:
                     int right = rightNode(n);
                     if (balanceFactor(right) == 1) {
@@ -432,6 +432,7 @@ public abstract class AVLTree {
                     }
                     rotateLeft(n);
                     break;
+//              left sub tree is deeper
                 case 2:
                     int left = leftNode(n);
                     if (balanceFactor(left) == -1) {
@@ -440,11 +441,13 @@ public abstract class AVLTree {
                     rotateRight(n);
                     break;
                 case -1:
+                    break;
                 case 0:
+                    break;
                 case 1:
                     break; // ok
                 default:
-                    throw new AssertionError();
+                    throw new AssertionError("Illegal balance factor found : " + balanceFactor(n));
             }
 
             n = p;
@@ -453,6 +456,7 @@ public abstract class AVLTree {
 
     /**
      * set the aggregate count of the node based on the maximum aggregate count of left and right child
+     *
      * @param node is the node
      */
     protected void fixAggregateCounts(int node) {
@@ -461,6 +465,7 @@ public abstract class AVLTree {
 
     /**
      * Rotate the tree arround node to clockwise direction
+     *
      * @param node is the node
      */
     private void rotateLeft(int node) {
@@ -477,7 +482,6 @@ public abstract class AVLTree {
         } else if (leftNode(p) == node) {
             setLeftNode(p, r);
         } else {
-//            assert rightNode(p) == node;
             setRightNode(p, r);
         }
         setLeftNode(r, node);
@@ -487,7 +491,8 @@ public abstract class AVLTree {
     }
 
     /**
-     * Rotate the tree arround node to anti-clockwise direction
+     * Rotate the tree around node to anti-clockwise direction
+     *
      * @param node is the node
      */
     private void rotateRight(int node) {
@@ -504,7 +509,6 @@ public abstract class AVLTree {
         } else if (rightNode(p) == node) {
             setRightNode(p, l);
         } else {
-//            assert leftNode(p) == node;
             setLeftNode(p, l);
         }
         setRightNode(l, node);
@@ -514,61 +518,51 @@ public abstract class AVLTree {
     }
 
     private void setParentNode(int node, int parent) {
-//        assert node != NIL;
         this.parentNodes[node] = parent;
     }
 
     private void setLeftNode(int node, int left) {
-//        assert node != NIL;
         this.leftNodes[node] = left;
     }
 
     private void setRightNode(int node, int right) {
-//        assert node != NIL;
         this.rightNodes[node] = right;
     }
 
     private void setDepth(int node, int depth) {
-//        assert node != NIL;
-//        assert depth >= 0 && depth <= Byte.MAX_VALUE;
-        this.depths[node] = (byte) depth;
+        this.depths[node] = depth;
     }
-
-
-
 
 
     //    allocate new nodes and release nodes
     private static class NodeAllocator {
 
-        private int nextNode;
-        private IntStack releasedNodes;
+        private int lastReleasedNode;
+        private IntStack releasableNodes;
 
         NodeAllocator() {
-            nextNode = NIL + 1;
-            releasedNodes = new IntStack();
+            lastReleasedNode = NIL + 1;
+            releasableNodes = new IntStack();
         }
 
         int newNode() {
-
 //          release an existing one
-            if (releasedNodes.size() > 0) {
-                return releasedNodes.pop();
+            if (releasableNodes.size() > 0) {
+                return releasableNodes.pop();
             } else {
-                return nextNode++;
+                return lastReleasedNode++;
             }
         }
 
-
-        //      used node is made available for reuse
+//      used node is made available for reuse
         void release(int node) {
-//            assert node < nextNode;
-            releasedNodes.push(node);
+//            assert node < lastReleasedNode;
+            releasableNodes.push(node);
         }
 
         //      number of nodes in the tree
         int size() {
-            return nextNode - releasedNodes.size() - 1;
+            return lastReleasedNode - releasableNodes.size() - 1;
         }
 
     }

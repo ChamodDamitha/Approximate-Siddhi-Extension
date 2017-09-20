@@ -25,7 +25,7 @@ public class PercentileTestCase {
 
     @Test
     public void testApproximatePercentile() throws InterruptedException {
-        final int noOfEvents = 1000;
+        final int noOfEvents = 100000;
         final double accuracy = 0.3;
         final double percentilePosition = 0.5;
 
@@ -45,13 +45,14 @@ public class PercentileTestCase {
 
             @Override
             public void receive(Event[] events) {
-                EventPrinter.print(events);
+//                EventPrinter.print(events);
                 for (Event event : events) {
                     percentile = (double) event.getData(1);
                     if (count/2.0 >= (percentile - percentile * accuracy)
                             && count/2.0 <= (percentile + percentile * accuracy)) {
                         Assert.assertEquals(true, true);
                     } else {
+//                        System.out.println("percentile : " + percentile + ", count/2.0 : " + (count/2.0));
                         Assert.assertEquals(true, false);
                     }
                     count++;

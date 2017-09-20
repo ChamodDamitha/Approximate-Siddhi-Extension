@@ -18,15 +18,11 @@
 
 package org.wso2.extension.siddhi.execution.approximate.percentile.tdigest;
 
-import java.util.Random;
-
 
 /**
  * A data structure to store centroids of a set of values
  */
 public abstract class TDigest {
-
-    protected Random gen = new Random();
 
     /**
      * TDigest provide a relative accuracy for different percentiles.
@@ -59,35 +55,31 @@ public abstract class TDigest {
     /**
      * Adds a value to the digest
      *
-     * @param x The value to add.
+     * @param x The value to addValue.
      * @param w The weight of this point.
      */
     public abstract void add(double x, int w);
 
     protected final void checkValue(double x) {
         if (Double.isNaN(x)) {
-            throw new IllegalArgumentException("Cannot add NaN");
+            throw new IllegalArgumentException("Cannot addValue NaN");
         }
     }
 
-
-    public abstract void compress();
-
-
     /**
-     * Returns the percentile(or percentile) value
+     * Returns the percentile value
      *
-     * @param q The desired fraction
-     * @return The value x such that cdf(x) == q
+     * @param percentilePosition The desired fraction
+     * @return The value x such that cdf(x) == percentilePosition
      */
-    public abstract double percentile(double q);
+    public abstract double percentile(double percentilePosition);
 
 
     /**
      * Compute the weighted average between x1 with a weight of
      * w1 and x2 with a weight of w2
      */
-    public static double weightedAverage(double x1, int w1, double x2, int w2) {
+    public double weightedAverage(double x1, int w1, double x2, int w2) {
         return (x1 * w1 + x2 * w2) / (w1 + w2);
     }
 
@@ -101,7 +93,7 @@ public abstract class TDigest {
      * @param nextMean      The mean of the following centroid.
      * @return The interpolated mean.
      */
-    static double percentile(double index, double previousIndex, double nextIndex,
+    public double percentile(double index, double previousIndex, double nextIndex,
                              double previousMean, double nextMean) {
         final double delta = nextIndex - previousIndex;
         final double previousWeight = (nextIndex - index) / delta;
@@ -113,7 +105,7 @@ public abstract class TDigest {
     /**
      * Adds a value to the digest
      *
-     * @param x The value to add.
+     * @param x The value to addValue.
      */
     public void add(double x) {
         add(x, 1);

@@ -19,11 +19,14 @@
 package org.wso2.extension.siddhi.execution.approximate.percentile.tdigest;
 
 
+import java.util.Random;
+
 /**
  * A tree data structure to store centroids of a set of values
  */
 public class AVLTreeDigest extends TDigest {
 
+    private Random gen = new Random();
     private double compression;
     private AVLGroupTree avlGroupTree;
     long count = 0;
@@ -38,7 +41,7 @@ public class AVLTreeDigest extends TDigest {
     @Override
     public void add(double value, int weight) {
 
-//        set the start node
+//      set the start node
         checkValue(value);
         int start = avlGroupTree.floorNode(value);
         if (start == AVLTree.NIL) {
@@ -47,7 +50,6 @@ public class AVLTreeDigest extends TDigest {
 
 //        empty tree
         if (start == AVLTree.NIL) {
-//            assert avlGroupTree.size() == 0; // empty avlGroupTree
             avlGroupTree.add(value, weight);
             count = weight;
         } else { //        tree has nodes
@@ -55,7 +57,7 @@ public class AVLTreeDigest extends TDigest {
             int lastNeighbor = AVLTree.NIL;
 
 
-//            choose the nearest neighbour from either sides
+//          choose the nearest neighbour from either sides
             for (int neighbor = start; neighbor != AVLTree.NIL; neighbor = avlGroupTree.nextNode(neighbor)) {
                 double diff = Math.abs(avlGroupTree.mean(neighbor) - value);
                 if (diff < minDistance) {
@@ -72,12 +74,16 @@ public class AVLTreeDigest extends TDigest {
             long sum = avlGroupTree.headSum(start);
             double n = 0;
             for (int neighbor = start; neighbor != lastNeighbor; neighbor = avlGroupTree.nextNode(neighbor)) {
-//                assert minDistance == Math.abs(avlGroupTree.mean(neighbor) - value);
-                double q = count == 1 ? 0.5 : (sum + (avlGroupTree.count(neighbor) - 1) / 2.0) / (count - 1);
+                double q;
+                if(count == 1) {
+                    q = 0.5;
+                } else {
+                    q = (sum + (avlGroupTree.count(neighbor) - 1) / 2.0) / (count - 1);
+                }
                 double k = 4 * count * q * (1 - q) / compression;
 
 
-//                check whether the value can be merged into the neighbour centroid
+//              check whether the value can be merged into the neighbour centroid
                 if (avlGroupTree.count(neighbor) + weight <= k) {
                     n++;
 
@@ -102,62 +108,19 @@ public class AVLTreeDigest extends TDigest {
                 avlGroupTree.update(closest, centroid, count);
             }
             count += weight;
-
-
-            if (avlGroupTree.size() > 20 * compression) {
-                compress();
-            }
         }
     }
-
-    /**
-     * compress the tree to reduce the number of centroids
-     */
-    @Override
-    public void compress() {
-        if (avlGroupTree.size() <= 1) {
-            return;
-        }
-//        create a new group tree
-        AVLGroupTree centroids = avlGroupTree;
-        this.avlGroupTree = new AVLGroupTree();
-
-//        fill nodes in ascending order
-        int[] nodes = new int[centroids.size()];
-        nodes[0] = centroids.leastNode();
-        for (int i = 1; i < nodes.length; ++i) {
-            nodes[i] = centroids.nextNode(nodes[i - 1]);
-//            assert nodes[i] != AVLTree.NIL;
-        }
-//        assert centroids.nextNode(nodes[nodes.length - 1]) == AVLTree.NIL;
-
-
-//        randomly swap the nodes
-        for (int i = centroids.size() - 1; i > 0; --i) {
-            int other = gen.nextInt(i + 1);
-            int tmp = nodes[other];
-            nodes[other] = nodes[i];
-            nodes[i] = tmp;
-        }
-
-
-//        add the nodes to new tree
-        for (int node : nodes) {
-            add(centroids.mean(node), centroids.count(node));
-        }
-    }
-
 
 
     /**
      * calculate the percentile value for a given position
-     * @param q is the position of percentile in the range [0,1].
+     * @param percentilePosition is the position of percentile in the range [0,1].
      * @return the value of the percentile
      */
     @Override
-    public double percentile(double q) {
-        if (q < 0 || q > 1) {
-            throw new IllegalArgumentException("q should be in [0,1], got " + q);
+    public double percentile(double percentilePosition) {
+        if (percentilePosition < 0 || percentilePosition > 1) {
+            throw new IllegalArgumentException("q should be in [0,1], but found " + percentilePosition);
         }
 
         AVLGroupTree groupTree = avlGroupTree;
@@ -169,24 +132,37 @@ public class AVLTreeDigest extends TDigest {
             return groupTree.mean(groupTree.leastNode());
         }//only one centroid available
 
-        final double index = q * (count - 1);
+        System.out.println("count :" + count);//TODO : test
 
-        double previousMean = Double.NaN, previousIndex = 0;
+        final double index = percentilePosition * (count - 1);
+
+
+        System.out.println("index :" + index);//TODO : test
+
+        double previousMean = Double.NaN;
+        double previousIndex = 0;
         int next = groupTree.floorSumNode((long) index);
-//        assert next != AVLTree.NIL;
         long total = groupTree.headSum(next);
         int prev = groupTree.previousNode(next);
+
         if (prev != AVLTree.NIL) {
             previousMean = groupTree.mean(prev);
             previousIndex = total - ((groupTree.count(prev) + 1.0) / 2);
         }
+
+
+        System.out.println("next :" + next);//TODO : test
+        System.out.println("total :" + total);//TODO : test
+        System.out.println("prev :" + prev);//TODO : test
+        System.out.println("previousMean :" + previousMean);//TODO : test
+        System.out.println("previousIndex :" + previousIndex);//TODO : test
+        System.out.println("------------------------------------------------------------");//TODO : test
 
         while (true) {
             double nextIndex = total + ((groupTree.count(next) - 1.0) / 2);
 
             if (nextIndex >= index) {
                 if (Double.isNaN(previousMean)) {
-//                    assert total == 0 : total;
                     if (nextIndex == previousIndex) {
                         return groupTree.mean(next);
                     }

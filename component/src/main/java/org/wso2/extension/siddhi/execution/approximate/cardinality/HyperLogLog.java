@@ -144,7 +144,7 @@ public class HyperLogLog<E> {
         int bucketId = hash >>> (Integer.SIZE - lengthOfBucketId);
 
 //      Shift all the bits to left till the bucket id is removed
-        int remainingValue = hash << lengthOfBucketId | (1 << (lengthOfBucketId - 1));
+        int remainingValue = hash << lengthOfBucketId;
 
         int noOfLeadingZeros = Integer.numberOfLeadingZeros(remainingValue) + 1;
 
