@@ -17,12 +17,17 @@ public class CountQueue {
      */
     public boolean add(int newValue) {
         if (counts.size() > 0) {
-            long lastValue = counts.get(counts.size() - 1);
-            if (lastValue > newValue) {
+            for (int i = counts.size() - 1; i >=0; i-- ) {
+                if (newValue > counts.get(i)) {
+                    counts.remove(i);
+                }
+            }
+            if (counts.size() == 0 || newValue <= counts.get(counts.size() - 1)) {
                 counts.add(newValue);
                 return true;
+            } else {
+                return false;
             }
-            return false;
         } else {
             counts.add(newValue);
             return true;
