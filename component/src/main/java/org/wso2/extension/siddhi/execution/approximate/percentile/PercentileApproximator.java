@@ -20,7 +20,7 @@
 package org.wso2.extension.siddhi.execution.approximate.percentile;
 
 
-import com.tdunning.math.stats.TDigest;
+import org.wso2.extension.siddhi.execution.approximate.percentile.tdigest.TDigest;
 
 /**
  * Calaculate percentiles using TDigest algorithm
@@ -35,7 +35,7 @@ public class PercentileApproximator implements PercentileCalculator {
 
     @Override
     public void initialize(double percentilePosition, double accuracy) {
-        //      accuracy = 4 * percentile * (1 - percentile) * certainty = 4 * percentile * (1 - percentile) / compression
+//              accuracy = 4 * percentile * (1 - percentile) * certainty = 4 * percentile * (1 - percentile) / compression
         double compression = 4 * percentilePosition * (1 - percentilePosition) / accuracy;
         if (compression < 1) {
             throw new IllegalArgumentException("a lower accuracy of " + accuracy + " cannot be achieved");
@@ -50,7 +50,13 @@ public class PercentileApproximator implements PercentileCalculator {
     }
 
     @Override
-    public double getPercentile(double percentilePosition) {
-        return tDigest.quantile(percentilePosition);
+    public void remove(double data) {
+        tDigest.remove(data);
+    }
+
+    @Override
+    public double getPercentile(double percentilePosition)
+    {
+        return tDigest.percentile(percentilePosition);
     }
 }

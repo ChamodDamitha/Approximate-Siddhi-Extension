@@ -25,6 +25,7 @@ import org.wso2.siddhi.annotation.Parameter;
 import org.wso2.siddhi.annotation.ReturnAttribute;
 import org.wso2.siddhi.annotation.util.DataType;
 import org.wso2.siddhi.core.config.SiddhiAppContext;
+import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.ComplexEventChunk;
 import org.wso2.siddhi.core.event.stream.StreamEvent;
 import org.wso2.siddhi.core.event.stream.StreamEventCloner;
@@ -170,7 +171,12 @@ public class PercentileExtension extends StreamProcessor {
                 } else {
                     value = (Double) attributeExpressionExecutors[0].execute(streamEvent);
                 }
-                percentileCalculator.add(value);
+                if(streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
+                    percentileCalculator.add(value);
+                }
+                else if(streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
+                    percentileCalculator.remove(value);
+                }
                 Object[] outputData = {percentileCalculator.getPercentile(percentilePosition)};
 
                 if (outputData == null) {

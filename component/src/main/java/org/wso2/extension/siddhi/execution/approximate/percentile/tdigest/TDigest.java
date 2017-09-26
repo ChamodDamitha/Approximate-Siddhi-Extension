@@ -60,6 +60,8 @@ public abstract class TDigest {
      */
     public abstract void add(double x, int w);
 
+    public abstract void remove(double x, int w);
+
     protected final void checkValue(double x) {
         if (Double.isNaN(x)) {
             throw new IllegalArgumentException("Cannot addValue NaN");
@@ -109,6 +111,15 @@ public abstract class TDigest {
      */
     public void add(double x) {
         add(x, 1);
+    }
+
+    /**
+     * Remove a value from the digest
+     *
+     * @param x The value
+     */
+    public void remove(double x) {
+        remove(x, 1);
     }
 
 

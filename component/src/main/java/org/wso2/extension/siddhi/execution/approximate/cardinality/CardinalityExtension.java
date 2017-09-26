@@ -130,15 +130,17 @@ public class CardinalityExtension extends StreamProcessor {
                 Object newData = attributeExpressionExecutors[0].execute(streamEvent);
                 if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
                     hyperLogLog.addItem(newData);
+
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
                     hyperLogLog.removeItem(newData);
                 }
                 Object[] outputData = {hyperLogLog.getCardinality()};
+//                Object[] outputData = {3000};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
                 } else {
-                    logger.debug("Populating output");
+//                    logger.debug("Populating output");
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }
             }

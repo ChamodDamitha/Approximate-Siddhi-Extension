@@ -26,7 +26,7 @@ import java.util.Random;
  */
 public class AVLTreeDigest extends TDigest {
 
-    private Random gen = new Random();
+    private Random gen;
     private double compression;
     private AVLGroupTree avlGroupTree;
     long count = 0;
@@ -40,6 +40,7 @@ public class AVLTreeDigest extends TDigest {
 
     @Override
     public void add(double value, int weight) {
+        gen = new Random(123);
 
 //      set the start node
         checkValue(value);
@@ -111,6 +112,81 @@ public class AVLTreeDigest extends TDigest {
         }
     }
 
+//    ............................................................
+    @Override
+    public void remove(double value, int weight) {
+        gen = new Random(123);
+
+//      set the start node
+        checkValue(value);
+        int start = avlGroupTree.floorNode(value);
+        if (start == AVLTree.NIL) {
+            start = avlGroupTree.leastNode();
+        }
+
+//        empty tree
+        if (start == AVLTree.NIL) {
+//            avlGroupTree.add(value, weight);
+//            count = weight;
+        } else { //        tree has nodes
+            double minDistance = Double.MAX_VALUE;
+            int lastNeighbor = AVLTree.NIL;
+
+
+//          choose the nearest neighbour from either sides
+            for (int neighbor = start; neighbor != AVLTree.NIL; neighbor = avlGroupTree.nextNode(neighbor)) {
+                double diff = Math.abs(avlGroupTree.mean(neighbor) - value);
+                if (diff < minDistance) {
+                    start = neighbor;
+                    minDistance = diff;
+                } else if (diff > minDistance) {
+                    // as soon as diff increases, have passed the nearest neighbor and can quit
+                    lastNeighbor = neighbor;
+                    break;
+                }
+            }
+
+            int closest = AVLTree.NIL;
+            long sum = avlGroupTree.headSum(start);
+            double n = 0;
+            for (int neighbor = start; neighbor != lastNeighbor; neighbor = avlGroupTree.nextNode(neighbor)) {
+                double q;
+                if(count == 1) {
+                    q = 0.5;
+                } else {
+                    q = (sum + (avlGroupTree.count(neighbor) - 1) / 2.0) / (count - 1);
+                }
+                double k = 4 * count * q * (1 - q) / compression;
+
+
+//              check whether the value can be merged into the neighbour centroid
+                if (avlGroupTree.count(neighbor) + weight <= k) {
+                    n++;
+
+//                  with the increase of n, the probability of going inside the if condition decrease
+                    if (gen.nextDouble() < 1 / n) {
+                        closest = neighbor;
+                    }
+                }
+                sum += avlGroupTree.count(neighbor);
+            }
+
+            if (closest == AVLTree.NIL) {
+//                avlGroupTree.add(value, weight);
+            } else {
+                double centroid = avlGroupTree.mean(closest);
+                int count = avlGroupTree.count(closest);
+
+//                merge the value with the centroid
+                centroid = weightedAverage(centroid, count, -value, -weight);
+                count -= weight;
+
+                avlGroupTree.update(closest, centroid, count);
+            }
+            count += weight;
+        }
+    }
+
 
     /**
      * calculate the percentile value for a given position
@@ -132,12 +208,12 @@ public class AVLTreeDigest extends TDigest {
             return groupTree.mean(groupTree.leastNode());
         }//only one centroid available
 
-        System.out.println("count :" + count);//TODO : test
+//        System.out.println("count :" + count);//TODO : test
 
         final double index = percentilePosition * (count - 1);
 
 
-        System.out.println("index :" + index);//TODO : test
+//        System.out.println("index :" + index);//TODO : test
 
         double previousMean = Double.NaN;
         double previousIndex = 0;
@@ -151,12 +227,12 @@ public class AVLTreeDigest extends TDigest {
         }
 
 
-        System.out.println("next :" + next);//TODO : test
-        System.out.println("total :" + total);//TODO : test
-        System.out.println("prev :" + prev);//TODO : test
-        System.out.println("previousMean :" + previousMean);//TODO : test
-        System.out.println("previousIndex :" + previousIndex);//TODO : test
-        System.out.println("------------------------------------------------------------");//TODO : test
+//        System.out.println("next :" + next);//TODO : test
+//        System.out.println("total :" + total);//TODO : test
+//        System.out.println("prev :" + prev);//TODO : test
+//        System.out.println("previousMean :" + previousMean);//TODO : test
+//        System.out.println("previousIndex :" + previousIndex);//TODO : test
+//        System.out.println("------------------------------------------------------------");//TODO : test
 
         while (true) {
             double nextIndex = total + ((groupTree.count(next) - 1.0) / 2);

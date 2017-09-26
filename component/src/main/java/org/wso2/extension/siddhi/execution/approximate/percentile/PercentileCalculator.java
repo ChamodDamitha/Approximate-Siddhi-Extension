@@ -25,5 +25,6 @@ public interface PercentileCalculator {
     void initialize(double certainty);
     void initialize(double percentilePosition, double accuracy);
     void add(double newData);
+    void remove(double data);
     double getPercentile(double percentilePosition);
 }
