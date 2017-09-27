@@ -25,15 +25,15 @@ public class CardinalityTestCase {
 
     @Test
     public void testApproximateCardinality() throws InterruptedException {
-        final int noOfEvents = 1000;
-        final double accuracy = 0.3;
+        final int noOfEvents = 10000;
+        final double accuracy = 0.5;
 
         LOG.info("Approximate Cardinality Test Case");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(100)#approximate:cardinality(number, " + accuracy + ") " +
+                "from inputStream#window.length(1000)#approximate:cardinality(number, " + accuracy + ") " +
                 "select cardinality " +
                 "insert into outputStream;");
 
@@ -80,7 +80,7 @@ public class CardinalityTestCase {
 //            inputHandler.send(new Object[]{j % 10});
 //        }
 
-        for (double j = 0; j < noOfEvents; j++) {
+        for (int j = 0; j < noOfEvents; j++) {
             inputHandler.send(new Object[]{j});
             Thread.sleep(1);
         }

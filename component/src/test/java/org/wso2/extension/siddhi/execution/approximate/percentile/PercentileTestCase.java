@@ -25,7 +25,9 @@ public class PercentileTestCase {
 
     @Test
     public void testApproximatePercentile() throws InterruptedException {
-        final int noOfEvents = 10;
+        long t1 = System.currentTimeMillis();
+
+        final int noOfEvents = 10000;
         final double accuracy = 0.3;
         final double percentilePosition = 0.5;
 
@@ -33,10 +35,19 @@ public class PercentileTestCase {
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number double);";
-        String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(5)#approximate:percentile(number, " + percentilePosition + ", " + accuracy + ") " +
-                "select * " +
+//        String query = ("@info(name = 'query1') " +
+//                "from inputStream#window.length(5)#approximate:percentile(number, " + percentilePosition + ", " + accuracy + ") " +
+//                "select * " +
+//                "insert into outputStream;");
+String query = ("@info(name = 'query1') " +
+                "from inputStream#window.length(1000) " +
+                "select approximate:percentile(number, " + percentilePosition + ", " + accuracy + ") as percentile " +
                 "insert into outputStream;");
+
+//String query = ("@info(name = 'query1') " +
+//                "from inputStream#window.length(1000) " +
+//                "select math:percentile(number, " + (percentilePosition * 100) + ") as percentile " +
+//                "insert into outputStream;");
 
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
 
@@ -47,7 +58,7 @@ public class PercentileTestCase {
             public void receive(Event[] events) {
 //                EventPrinter.print(events);
                 for (Event event : events) {
-                    percentile = (double) event.getData(1);
+                    percentile = (double) event.getData(0);
 //                    if (count/2.0 >= (percentile - percentile * accuracy)
 //                            && count/2.0 <= (percentile + percentile * accuracy)) {
 //                        Assert.assertEquals(true, true);
@@ -55,7 +66,7 @@ public class PercentileTestCase {
 ////                        System.out.println("percentile : " + percentile + ", count/2.0 : " + (count/2.0));
 //                        Assert.assertEquals(true, false);
 //                    }
-                    System.out.println("percentile : " + percentile);
+//                    System.out.println("percentile : " + percentile);
                     count++;
                 }
                 eventArrived = true;
@@ -73,6 +84,8 @@ public class PercentileTestCase {
         Assert.assertEquals(noOfEvents, count);
         Assert.assertTrue(eventArrived);
         siddhiAppRuntime.shutdown();
+
+        System.out.println("time elapsed : " + (System.currentTimeMillis() - t1));
     }
 }
 

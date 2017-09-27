@@ -39,6 +39,7 @@ import org.wso2.siddhi.core.util.config.ConfigReader;
 import org.wso2.siddhi.query.api.definition.AbstractDefinition;
 import org.wso2.siddhi.query.api.definition.Attribute;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -135,7 +136,6 @@ public class CardinalityExtension extends StreamProcessor {
                     hyperLogLog.removeItem(newData);
                 }
                 Object[] outputData = {hyperLogLog.getCardinality()};
-//                Object[] outputData = {3000};
 
                 if (outputData == null) {
                     streamEventChunk.remove();

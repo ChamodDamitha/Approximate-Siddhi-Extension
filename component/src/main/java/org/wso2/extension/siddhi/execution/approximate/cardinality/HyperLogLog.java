@@ -17,6 +17,7 @@
 */
 package org.wso2.extension.siddhi.execution.approximate.cardinality;
 
+
 /**
  * A probabilistic data structure to calculate cardinality of a set
  *
@@ -25,7 +26,7 @@ package org.wso2.extension.siddhi.execution.approximate.cardinality;
 public class HyperLogLog<E> {
 
     private final double standardError = 1.04;
-    final double pow2to32 = Math.pow(2, 32);
+    private final double pow2to32 = Math.pow(2, 32);
     private int noOfBuckets;
     private int lengthOfBucketId;
     private int[] countArray;
@@ -38,6 +39,7 @@ public class HyperLogLog<E> {
 
     private double harmonicCountSum;
     private int noOfZeroBuckets;
+
 
     /**
      * Create a new HyperLogLog by specifying the accuracy
@@ -204,6 +206,7 @@ public class HyperLogLog<E> {
      */
     private boolean updateBucket(int index, int leadingZeroCount) {
         long currentZeroCount = countArray[index];
+        pastCountsArray[index].add(leadingZeroCount);
         if (currentZeroCount < leadingZeroCount) {
 
             harmonicCountSum = harmonicCountSum - (1.0 / (1 << currentZeroCount)) + (1.0 / (1 << leadingZeroCount));
@@ -216,7 +219,6 @@ public class HyperLogLog<E> {
             }
 
             countArray[index] = leadingZeroCount;
-            pastCountsArray[index].add(leadingZeroCount);
             return true;
         }
         return false;

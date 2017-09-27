@@ -20,6 +20,7 @@ public class CountQueue {
             for (int i = counts.size() - 1; i >=0; i-- ) {
                 if (newValue > counts.get(i)) {
                     counts.remove(i);
+
                 }
             }
             if (counts.size() == 0 || newValue <= counts.get(counts.size() - 1)) {

@@ -18,6 +18,8 @@
 
 package org.wso2.extension.siddhi.execution.approximate.percentile;
 
+import java.util.ArrayList;
+
 /**
  * Interface to calculate percentiles
  */
@@ -25,6 +27,7 @@ public interface PercentileCalculator {
     void initialize(double certainty);
     void initialize(double percentilePosition, double accuracy);
     void add(double newData);
+    void add(ArrayList<Double> newData);
     void remove(double data);
     double getPercentile(double percentilePosition);
 }
