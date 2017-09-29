@@ -60,7 +60,7 @@ import java.util.Map;
                                 DataType.BOOL, DataType.TIME, DataType.OBJECT}
                 ),
                 @Parameter(
-                        name = "relative_error",
+                        name = "relative.error",
                         description = "this is the relative error for which the count is obtained",
                         type = {DataType.DOUBLE}
                 ),
@@ -128,7 +128,7 @@ public class CountExtension extends StreamProcessor {
         }
 
         if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
-            confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
+            confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
         } else {
             throw new SiddhiAppCreationException("confidence should be of type Double but found " +
                     attributeExpressionExecutors[2].getReturnType());
