@@ -20,7 +20,9 @@
 package org.wso2.extension.siddhi.execution.approximate.percentile;
 
 
-import org.wso2.extension.siddhi.execution.approximate.percentile.tdigest.TDigest;
+//import org.wso2.extension.siddhi.execution.approximate.percentile.tdigest.TDigest                           ;
+
+import com.tdunning.math.stats.TDigest;
 
 import java.util.ArrayList;
 
@@ -58,14 +60,10 @@ public class PercentileApproximator implements PercentileCalculator {
         }
     }
 
-    @Override
-    public void remove(double data) {
-        tDigest.remove(data);
-    }
 
     @Override
     public double getPercentile(double percentilePosition)
     {
-        return tDigest.percentile(percentilePosition);
+        return tDigest.quantile(percentilePosition);
     }
 }

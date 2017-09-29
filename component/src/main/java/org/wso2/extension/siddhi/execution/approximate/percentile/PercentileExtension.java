@@ -174,15 +174,12 @@ public class PercentileExtension extends StreamProcessor {
                 if(streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
                     percentileCalculator.add(value);
                 }
-                else if(streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
-                    percentileCalculator.remove(value);
-                }
                 Object[] outputData = {percentileCalculator.getPercentile(percentilePosition)};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
                 } else {
-                    logger.debug("Populating output");
+//                    logger.debug("Populating output");
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }
             }

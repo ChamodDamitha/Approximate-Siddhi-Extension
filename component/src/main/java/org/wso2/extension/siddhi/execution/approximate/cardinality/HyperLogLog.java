@@ -18,15 +18,19 @@
 package org.wso2.extension.siddhi.execution.approximate.cardinality;
 
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+
 /**
  * A probabilistic data structure to calculate cardinality of a set
  *
  * @param <E> is the type of objects in the set
  */
 public class HyperLogLog<E> {
-
     private final double standardError = 1.04;
     private final double pow2to32 = Math.pow(2, 32);
+    private final long const_1 = 1;
+
     private int noOfBuckets;
     private int lengthOfBucketId;
     private int[] countArray;
@@ -40,6 +44,7 @@ public class HyperLogLog<E> {
     private double harmonicCountSum;
     private int noOfZeroBuckets;
 
+    private HashFunction hashFunction;
 
     /**
      * Create a new HyperLogLog by specifying the accuracy
@@ -48,6 +53,8 @@ public class HyperLogLog<E> {
      * @param accuracy is a number in the range (0, 1)
      */
     public HyperLogLog(double accuracy) {
+
+        hashFunction = Hashing.murmur3_128();
 
         this.specifiedAccuracy = accuracy;
 
@@ -97,34 +104,22 @@ public class HyperLogLog<E> {
     public long getCardinality() {
 
         double harmonicCountMean;
-        int estimatedCardinality;
-//        long count;
+        long estimatedCardinality;
         long cardinality;
-
-//      calculate harmonic mean of the bucket values
-//        for (int i = 0; i < noOfBuckets; i++) {
-//            count = countArray[i];
-//            harmonicCountSum += (1.0 / (1 << count));
-//
-//            if (count == 0) {
-//                noOfZeroBuckets++;
-//            }
-//        }
 
         harmonicCountMean = noOfBuckets / harmonicCountSum;
 
 //      calculate the estimated cardinality
-        estimatedCardinality = (int) Math.ceil(noOfBuckets * estimationFactor * harmonicCountMean);
-
+        estimatedCardinality = (long) Math.ceil(noOfBuckets * estimationFactor * harmonicCountMean);
 
 //      if the estimate E is less than 2.5 * 32 and there are buckets with max-leading-zero count of zero,
 //      then instead return −32⋅log(V/32), where V is the number of buckets with max-leading-zero count = 0.
 //      threshold of 2.5x comes from the recommended load factor for Linear Counting
         if ((estimatedCardinality < 2.5 * noOfBuckets) && noOfZeroBuckets > 0) {
-            cardinality = (int) (-noOfBuckets * Math.log((double) noOfZeroBuckets / noOfBuckets));
+            cardinality = (long) (-noOfBuckets * Math.log((double) noOfZeroBuckets / noOfBuckets));
         } else if (estimatedCardinality > (pow2to32 / 30.0)) {
             //       if E > 2 ^ (32) / 30 : return −2 ^ (32) * log(1 − E / 2 ^ (32))
-            cardinality = (int) Math.ceil(-(pow2to32 * Math.log(1 - (estimatedCardinality / (pow2to32)))));
+            cardinality = (long) Math.ceil(-(pow2to32 * Math.log(1 - (estimatedCardinality / (pow2to32)))));
         } else {
             cardinality = estimatedCardinality;
         }
@@ -185,7 +180,8 @@ public class HyperLogLog<E> {
 
         if (newLeadingZeroCount >= 0) {
 
-            harmonicCountSum = harmonicCountSum - (1.0 / (1 << oldLeadingZeroCount)) + (1.0 / (1 << newLeadingZeroCount));
+            harmonicCountSum = harmonicCountSum - (1.0 / (const_1 << oldLeadingZeroCount))
+                    + (1.0 / (const_1 << newLeadingZeroCount));
             if (oldLeadingZeroCount == 0) {
                 noOfZeroBuckets--;
             }
@@ -209,7 +205,8 @@ public class HyperLogLog<E> {
         pastCountsArray[index].add(leadingZeroCount);
         if (currentZeroCount < leadingZeroCount) {
 
-            harmonicCountSum = harmonicCountSum - (1.0 / (1 << currentZeroCount)) + (1.0 / (1 << leadingZeroCount));
+            harmonicCountSum = harmonicCountSum - (1.0 / (const_1 << currentZeroCount))
+                    + (1.0 / (const_1 << leadingZeroCount));
 
             if (currentZeroCount == 0) {
                 noOfZeroBuckets--;
@@ -231,8 +228,9 @@ public class HyperLogLog<E> {
      * @param value to be hashed
      * @return integer hash value
      */
-    public int getHashValue(E value) {
-        return MurmurHash.hash(value);
+    public int getHashValue(Object value) {
+//        return MurmurHash.hash(value);
+        return hashFunction.newHasher().putInt((int)value).hash().asInt();
     }
 
     /**
