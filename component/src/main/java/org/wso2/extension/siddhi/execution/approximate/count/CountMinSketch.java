@@ -108,15 +108,25 @@ public class CountMinSketch<E> {
      * increment each value in the cell of relevant row and index (e.g. countArray[row][index]++)
      *
      * @param item
+     * @return count of the item
      */
-    public void insert(E item) {
+    public long insert(E item) {
         int[] hashValues = getHashValues(item);
         int index;
+        long currentMin = Long.MAX_VALUE;
+        long currentVal;
 
         for (int i = 0; i < depth; i++) {
             index = getArrayIndex(hashValues[i]);
-            countArray[i][index]++;
+            currentVal = countArray[i][index];
+            countArray[i][index] = currentVal + 1;
+
+            if (currentMin > currentVal) {
+                currentMin = currentVal;
+            }
         }
+
+        return currentMin + 1;
     }
 
     /**
@@ -126,15 +136,24 @@ public class CountMinSketch<E> {
      * decrement each value in the cell of relevant row and index (e.g. countArray[row][index]--)
      *
      * @param item
+     * @return count of the item
      */
-    public void remove(E item) {
+    public long remove(E item) {
         int[] hashValues = getHashValues(item);
         int index;
+        long currentMin = Long.MAX_VALUE;
+        long currentVal;
 
         for (int i = 0; i < depth; i++) {
             index = getArrayIndex(hashValues[i]);
-            countArray[i][index]--;
+            currentVal = countArray[i][index];
+            countArray[i][index] = currentVal - 1;
+
+            if (currentMin > currentVal) {
+                currentMin = currentVal;
+            }
         }
+        return currentMin - 1;
     }
 
     /**

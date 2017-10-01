@@ -109,7 +109,8 @@
                         <Export-Package>
                             org.wso2.extension.siddhi.execution.approximate.cardinality.*,
                             org.wso2.extension.siddhi.execution.approximate.similarity.*,
-                            org.wso2.extension.siddhi.execution.approximate.percentile.*
+                            org.wso2.extension.siddhi.execution.approximate.percentile.*,
+                            org.wso2.extension.siddhi.execution.approximate.count
                         </Export-Package>
                         <Import-Package>
                             *;resolution:=optional

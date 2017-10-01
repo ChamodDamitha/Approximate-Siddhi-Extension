@@ -19,7 +19,6 @@
 package org.wso2.extension.siddhi.execution.approximate.count;
 
 import org.apache.log4j.Logger;
-import org.wso2.extension.siddhi.execution.approximate.cardinality.HyperLogLog;
 import org.wso2.siddhi.annotation.Example;
 import org.wso2.siddhi.annotation.Extension;
 import org.wso2.siddhi.annotation.Parameter;
@@ -49,7 +48,7 @@ import java.util.Map;
  */
 @Extension(
         name = "count",
-        namespace = "approximate",
+        namespace = "exact",
         description = "Performs Count-min-sketch algorithm on a streaming data set based on a specific " +
                 "relative error and cofidence. ",
         parameters = {
@@ -88,57 +87,21 @@ import java.util.Map;
                 ),
         }
 )
-public class CountExtension extends StreamProcessor {
-    private static final Logger logger = Logger.getLogger(CountExtension.class.getName());
-    private double relativeError = 0.01;
-    private double confidence = 0.9;
-    private CountMinSketch countMinSketch;
+public class ExactCountExtension extends StreamProcessor {
+    private static final Logger logger = Logger.getLogger(ExactCountExtension.class.getName());
+    private HashMap<String, Long> countMap;
 
     @Override
     protected List<Attribute> init(AbstractDefinition inputDefinition,
                                    ExpressionExecutor[] attributeExpressionExecutors, ConfigReader configReader,
                                    SiddhiAppContext siddhiAppContext) {
 //       validate number of attributes
-        if (attributeExpressionExecutors.length != 3) {
-            throw new SiddhiAppCreationException("3 attributes are expected but " +
+        if (attributeExpressionExecutors.length != 1) {
+            throw new SiddhiAppCreationException("1 attribute is expected but " +
                     attributeExpressionExecutors.length + " attributes are found inside the count function");
         }
 
-        //expressionExecutors[1] --> relativeError
-        if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
-            throw new SiddhiAppCreationException("relative error has to be a constant but found " +
-                    this.attributeExpressionExecutors[1].getClass().getCanonicalName());
-        }
-
-        if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
-            relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
-        } else {
-            throw new SiddhiAppCreationException("relative error should be of type Double but found " +
-                    attributeExpressionExecutors[1].getReturnType());
-        }
-
-        if ((relativeError <= 0) || (relativeError >= 1)) {
-            throw new SiddhiAppCreationException("relative error must be in the range of (0, 1)");
-        }
-
-        //expressionExecutors[2] --> confidence
-        if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
-            throw new SiddhiAppCreationException("confidence has to be a constant but found " +
-                    this.attributeExpressionExecutors[2].getClass().getCanonicalName());
-        }
-
-        if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
-            confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
-        } else {
-            throw new SiddhiAppCreationException("confidence should be of type Double but found " +
-                    attributeExpressionExecutors[2].getReturnType());
-        }
-
-        if ((confidence <= 0) || (confidence >= 1)) {
-            throw new SiddhiAppCreationException("confidence must be in the range of (0, 1)");
-        }
-
-        countMinSketch = new CountMinSketch(relativeError, confidence);
+        countMap = new HashMap<String, Long>();
 
         List<Attribute> attributeList = new ArrayList<>(1);
         attributeList.add(new Attribute("count", Attribute.Type.LONG));
@@ -152,14 +115,19 @@ public class CountExtension extends StreamProcessor {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
                 Object newData = attributeExpressionExecutors[0].execute(streamEvent);
-                long count = 0;
+                Long count = countMap.get(newData.toString());
                 if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
-                    count = countMinSketch.insert(newData);
-
+                    if (count == null) {
+                        countMap.put(newData.toString(),1L);
+                    } else {
+                        countMap.put(newData.toString(), count + 1);
+                    }
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
-                    count = countMinSketch.remove(newData);
+                    if (count != null) {
+                        countMap.put(newData.toString(), count - 1);
+                    }
                 }
-                Object[] outputData = {count};
+                Object[] outputData = {countMap.get(newData.toString())};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
@@ -186,10 +154,6 @@ public class CountExtension extends StreamProcessor {
     public Map<String, Object> currentState() {
         synchronized (this) {
             Map<String, Object> map = new HashMap();
-            map.put("countMinSketch", countMinSketch);
-            map.put("relativeError", relativeError);
-            map.put("confidence", confidence);
-            logger.debug("storing countMinSketch");
             return map;
         }
     }
@@ -197,9 +161,6 @@ public class CountExtension extends StreamProcessor {
     @Override
     public void restoreState(Map<String, Object> map) {
         synchronized (this) {
-            relativeError = (Double) map.get("relativeError");
-            confidence = (Double) map.get("confidence");
-            countMinSketch = (CountMinSketch) map.get("countMinSketch");
         }
     }
 }
