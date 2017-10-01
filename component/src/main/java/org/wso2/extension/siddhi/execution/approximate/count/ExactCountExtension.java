@@ -57,16 +57,6 @@ import java.util.Map;
                         description = "The value used to find count",
                         type = {DataType.INT, DataType.DOUBLE, DataType.FLOAT, DataType.LONG, DataType.STRING,
                                 DataType.BOOL, DataType.TIME, DataType.OBJECT}
-                ),
-                @Parameter(
-                        name = "relative.error",
-                        description = "this is the relative error for which the count is obtained",
-                        type = {DataType.DOUBLE}
-                ),
-                @Parameter(
-                        name = "confidence",
-                        description = "this is the confidence for which the relative error is true",
-                        type = {DataType.DOUBLE}
                 )
         },
         returnAttributes = {
@@ -79,11 +69,11 @@ import java.util.Map;
         examples = {
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
-                                "from InputStream#approximate:count(some_attribute, 0.01, 0.9)\n" +
+                                "from InputStream#exact:count(some_attribute)\n" +
                                 "select count\n" +
                                 "insert into OutputStream;",
                         description = "count of events based on some_attribute is " +
-                                "calculated for an relative error of 0.01 and confidence of 0.9"
+                                "calculated exactly"
                 ),
         }
 )
