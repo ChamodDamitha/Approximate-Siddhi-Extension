@@ -25,7 +25,6 @@ import org.wso2.siddhi.annotation.Parameter;
 import org.wso2.siddhi.annotation.ReturnAttribute;
 import org.wso2.siddhi.annotation.util.DataType;
 import org.wso2.siddhi.core.config.SiddhiAppContext;
-import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.ComplexEventChunk;
 import org.wso2.siddhi.core.event.stream.StreamEvent;
 import org.wso2.siddhi.core.event.stream.StreamEventCloner;
@@ -39,7 +38,6 @@ import org.wso2.siddhi.core.util.config.ConfigReader;
 import org.wso2.siddhi.query.api.definition.AbstractDefinition;
 import org.wso2.siddhi.query.api.definition.Attribute;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +49,7 @@ import java.util.Map;
 @Extension(
         name = "cardinality",
         namespace = "approximate",
-        description = "Performs HyperLogLog algorithm on a streaming data set based on a specific accuracy. ",
+        description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error. ",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -60,8 +58,8 @@ import java.util.Map;
                                 DataType.BOOL, DataType.TIME, DataType.OBJECT}
                 ),
                 @Parameter(
-                        name = "accuracy",
-                        description = "this is the accuracy for which the cardinality is obtained",
+                        name = "relative.error",
+                        description = "this is the relative error for which the cardinality is obtained",
                         type = {DataType.DOUBLE}
                 )
         },
@@ -69,6 +67,16 @@ import java.util.Map;
                 @ReturnAttribute(
                         name = "cardinality",
                         description = "Represents the cardinality after the event arrived",
+                        type = {DataType.LONG}
+                ),
+                @ReturnAttribute(
+                        name = "lowerBound",
+                        description = "Represents the lower bound of the cardinality after the event arrived",
+                        type = {DataType.LONG}
+                ),
+                @ReturnAttribute(
+                        name = "upperBound",
+                        description = "Represents the upper bound of the cardinality after the event arrived",
                         type = {DataType.LONG}
                 )
         },
@@ -79,13 +87,14 @@ import java.util.Map;
                                 "select cardinality\n" +
                                 "insert into OutputStream;",
                         description = "cardinality of events based on some_attribute is " +
-                                "calculated for an accuracy of 0.01"
+                                "calculated for a relative error of 0.01"
                 ),
         }
 )
 public class CardinalityExtension extends StreamProcessor {
     private static final Logger logger = Logger.getLogger(CardinalityExtension.class.getName());
-    private double accuracy = 0.01;
+    private double relativeError = 0.01;
+    private long cardinality;
     private HyperLogLog hyperLogLog;
 
     @Override
@@ -98,27 +107,29 @@ public class CardinalityExtension extends StreamProcessor {
                     attributeExpressionExecutors.length + " attributes are found inside the cardinality function");
         }
 
-        //expressionExecutors[1] --> accurracy
+        //expressionExecutors[1] --> relativeError
         if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
-            throw new SiddhiAppCreationException("accuracy has to be a constant but found " +
+            throw new SiddhiAppCreationException("relativeError has to be a constant but found " +
                     this.attributeExpressionExecutors[1].getClass().getCanonicalName());
         }
 
         if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
-            accuracy = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
+            relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
         } else {
-            throw new SiddhiAppCreationException("accuracy should be of type Double but found " +
+            throw new SiddhiAppCreationException("relativeError should be of type Double but found " +
                     attributeExpressionExecutors[1].getReturnType());
         }
 
-        if ((accuracy <= 0) || (accuracy >= 1)) {
-            throw new SiddhiAppCreationException("accuracy must be in the range of (0, 1)");
+        if ((relativeError <= 0) || (relativeError >= 1)) {
+            throw new SiddhiAppCreationException("relativeError must be in the range of (0, 1)");
         }
 
-        hyperLogLog = new HyperLogLog(accuracy);
+        hyperLogLog = new HyperLogLog(relativeError);
 
-        List<Attribute> attributeList = new ArrayList<>(1);
+        List<Attribute> attributeList = new ArrayList<>(3);
         attributeList.add(new Attribute("cardinality", Attribute.Type.LONG));
+        attributeList.add(new Attribute("lower.bound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("upper.bound", Attribute.Type.LONG));
         return attributeList;
     }
 
@@ -135,7 +146,10 @@ public class CardinalityExtension extends StreamProcessor {
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
                     hyperLogLog.removeItem(newData);
                 }
-                Object[] outputData = {hyperLogLog.getCardinality()};
+                cardinality = hyperLogLog.getCardinality();
+
+                Object[] outputData = {cardinality, cardinality - cardinality * relativeError,
+                        cardinality + cardinality * relativeError};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
@@ -163,7 +177,7 @@ public class CardinalityExtension extends StreamProcessor {
         synchronized (this) {
             Map<String, Object> map = new HashMap();
             map.put("hyperLogLog", hyperLogLog);
-            map.put("accuracy", accuracy);
+            map.put("relativeError", relativeError);
             logger.debug("storing hyperLogLog");
             return map;
         }
@@ -172,7 +186,7 @@ public class CardinalityExtension extends StreamProcessor {
     @Override
     public void restoreState(Map<String, Object> map) {
         synchronized (this) {
-            accuracy = (Double) map.get("accuracy");
+            relativeError = (Double) map.get("relativeError");
             hyperLogLog = (HyperLogLog) map.get("hyperLogLog");
         }
     }

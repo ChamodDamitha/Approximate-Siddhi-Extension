@@ -16,6 +16,8 @@ package org.wso2.extension.siddhi.execution.approximate.count;/*
 * under the License.
 */
 
+import org.wso2.extension.siddhi.execution.approximate.cardinality.MurmurHash;
+
 import java.util.Random;
 
 /**
@@ -45,7 +47,7 @@ public class CountMinSketch<E> {
      * actual_answer <= approximate_answer + (relativeError * numberOfInsertions)
      *
      * @param relativeError is a positive number less than 1 (e.g. 0.01)
-     * @param confidence is a positive number less than 1 (e.g. 0.01) which is the probability of reaching the accuracy
+     * @param confidence    is a positive number less than 1 (e.g. 0.01) which is the probability of reaching the accuracy
      */
     public CountMinSketch(double relativeError, double confidence) {
         if (!(relativeError < 1 && relativeError > 0) || !(confidence < 1 && confidence > 0)) {
@@ -70,9 +72,6 @@ public class CountMinSketch<E> {
             hashCoefficients_A[i] = random.nextInt(Integer.MAX_VALUE);
             hashCoefficients_B[i] = random.nextInt(Integer.MAX_VALUE);
         }
-
-        System.out.println("depth : " + depth);//TODO : added for testing
-        System.out.println("width : " + width);//TODO : added for testing
     }
 
     /**

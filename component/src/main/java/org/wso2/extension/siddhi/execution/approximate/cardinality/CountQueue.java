@@ -12,15 +12,15 @@ public class CountQueue {
 
     /**
      * Add new value to the counts depending on previous value
+     *
      * @param newValue
      * @return
      */
     public boolean add(int newValue) {
         if (counts.size() > 0) {
-            for (int i = counts.size() - 1; i >=0; i-- ) {
+            for (int i = counts.size() - 1; i >= 0; i--) {
                 if (newValue > counts.get(i)) {
                     counts.remove(i);
-
                 }
             }
             if (counts.size() == 0 || newValue <= counts.get(counts.size() - 1)) {
@@ -37,14 +37,15 @@ public class CountQueue {
 
     /**
      * Remove the given value from the counts
+     *
      * @return the next value if the removed value is the first value,
      * -1 if no value is returned
      */
     public int remove(int value) {
         if (counts.size() > 0) {
-            if(counts.get(0)==value){
+            if (counts.get(0) == value) {
                 counts.remove(0);
-                if(counts.isEmpty()){
+                if (counts.isEmpty()) {
                     return 0;
                 } else {
                     return counts.get(0);

@@ -29,7 +29,6 @@ import com.google.common.hash.Hashing;
 public class HyperLogLog<E> {
     private final double standardError = 1.04;
     private final double pow2to32 = Math.pow(2, 32);
-    private final long const_1 = 1;
 
     private int noOfBuckets;
     private int lengthOfBucketId;
@@ -38,38 +37,31 @@ public class HyperLogLog<E> {
 
     private double estimationFactor;
 
-    private double specifiedAccuracy;
+    private double relativeError;
 
 
     private double harmonicCountSum;
     private int noOfZeroBuckets;
 
-    private HashFunction hashFunction;
-
     /**
      * Create a new HyperLogLog by specifying the accuracy
      * Based on the accuracy the array size is calculated
      *
-     * @param accuracy is a number in the range (0, 1)
+     * @param relativeError is a number in the range (0, 1)
      */
-    public HyperLogLog(double accuracy) {
+    public HyperLogLog(double relativeError) {
+        this.relativeError = relativeError;
 
-        hashFunction = Hashing.murmur3_128();
-
-        this.specifiedAccuracy = accuracy;
-
-//      95% of time answer lie within [answer +- 2 * accuracy * answer]
-        accuracy = specifiedAccuracy / 2;
-
-//      accuracy = standardError / sqrt(noOfBuckets) = > noOfBuckets = (standardError / accuracy) ^ 2
-        noOfBuckets = (int) Math.ceil(Math.pow(standardError / accuracy, 2));
+//      relativeError = standardError / sqrt(noOfBuckets) = > noOfBuckets = (standardError / relativeError) ^ 2
+        noOfBuckets = (int) Math.ceil(Math.pow(standardError / relativeError, 2));
 
         lengthOfBucketId = (int) Math.ceil(Math.log(noOfBuckets) / Math.log(2));
 
         noOfBuckets = (1 << lengthOfBucketId);
 
         if (lengthOfBucketId < 4) {
-            throw new IllegalArgumentException("a higher error margin of " + accuracy + " cannot be achieved");
+            throw new IllegalArgumentException("a higher relative error of " + relativeError +
+                    " cannot be achieved");
         }
 
         countArray = new int[noOfBuckets];
@@ -85,12 +77,12 @@ public class HyperLogLog<E> {
     }
 
     /**
-     * Compute the accuracy using the count array size
-     * accuracy = standardError / sqrt(noOfBuckets)
+     * Compute the relative error using the count array size
+     * relative error = standardError / sqrt(noOfBuckets)
      *
-     * @return the accuracy value
+     * @return the relative error value
      */
-    public double getAccuracy() {
+    public double getRelativeError() {
         return (standardError / Math.sqrt(noOfBuckets));
     }
 
@@ -135,8 +127,8 @@ public class HyperLogLog<E> {
     public long[] getConfidenceInterval() {
         long cardinality = getCardinality();
         long[] confidenceInterval = new long[2];
-        confidenceInterval[0] = (long) Math.floor(cardinality - (cardinality * specifiedAccuracy));
-        confidenceInterval[1] = (long) Math.ceil(cardinality + (cardinality * specifiedAccuracy));
+        confidenceInterval[0] = (long) Math.floor(cardinality - (cardinality * relativeError));
+        confidenceInterval[1] = (long) Math.ceil(cardinality + (cardinality * relativeError));
         return confidenceInterval;
     }
 
@@ -180,8 +172,8 @@ public class HyperLogLog<E> {
 
         if (newLeadingZeroCount >= 0) {
 
-            harmonicCountSum = harmonicCountSum - (1.0 / (const_1 << oldLeadingZeroCount))
-                    + (1.0 / (const_1 << newLeadingZeroCount));
+            harmonicCountSum = harmonicCountSum - (1.0 / (1L << oldLeadingZeroCount))
+                    + (1.0 / (1L << newLeadingZeroCount));
             if (oldLeadingZeroCount == 0) {
                 noOfZeroBuckets--;
             }
@@ -205,8 +197,8 @@ public class HyperLogLog<E> {
         pastCountsArray[index].add(leadingZeroCount);
         if (currentZeroCount < leadingZeroCount) {
 
-            harmonicCountSum = harmonicCountSum - (1.0 / (const_1 << currentZeroCount))
-                    + (1.0 / (const_1 << leadingZeroCount));
+            harmonicCountSum = harmonicCountSum - (1.0 / (1L << currentZeroCount))
+                    + (1.0 / (1L << leadingZeroCount));
 
             if (currentZeroCount == 0) {
                 noOfZeroBuckets--;
@@ -229,8 +221,7 @@ public class HyperLogLog<E> {
      * @return integer hash value
      */
     public int getHashValue(Object value) {
-//        return MurmurHash.hash(value);
-        return hashFunction.newHasher().putInt((int)value).hash().asInt();
+        return MurmurHash.hash(value);
     }
 
     /**

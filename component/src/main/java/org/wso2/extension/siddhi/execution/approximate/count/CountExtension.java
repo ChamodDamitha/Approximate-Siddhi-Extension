@@ -51,7 +51,7 @@ import java.util.Map;
         name = "count",
         namespace = "approximate",
         description = "Performs Count-min-sketch algorithm on a streaming data set based on a specific " +
-                "relative error and cofidence. ",
+                "relative error and confidence. ",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -75,6 +75,16 @@ import java.util.Map;
                         name = "count",
                         description = "Represents the count of the event after the event arrived",
                         type = {DataType.LONG}
+                ),
+                @ReturnAttribute(
+                        name = "lowerBound",
+                        description = "Represents the lower bound of the count after the event arrived",
+                        type = {DataType.LONG}
+                ),
+                @ReturnAttribute(
+                        name = "upperBound",
+                        description = "Represents the upper bound of the count after the event arrived",
+                        type = {DataType.LONG}
                 )
         },
         examples = {
@@ -93,6 +103,7 @@ public class CountExtension extends StreamProcessor {
     private double relativeError = 0.01;
     private double confidence = 0.9;
     private CountMinSketch countMinSketch;
+    private long noOfEvents = 0;
 
     @Override
     protected List<Attribute> init(AbstractDefinition inputDefinition,
@@ -140,8 +151,10 @@ public class CountExtension extends StreamProcessor {
 
         countMinSketch = new CountMinSketch(relativeError, confidence);
 
-        List<Attribute> attributeList = new ArrayList<>(1);
+        List<Attribute> attributeList = new ArrayList<>(3);
         attributeList.add(new Attribute("count", Attribute.Type.LONG));
+        attributeList.add(new Attribute("lower.bound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("upper.bound", Attribute.Type.LONG));
         return attributeList;
     }
 
@@ -155,11 +168,12 @@ public class CountExtension extends StreamProcessor {
                 long count = 0;
                 if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
                     count = countMinSketch.insert(newData);
-
+                    noOfEvents++;
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
                     count = countMinSketch.remove(newData);
+                    noOfEvents--;
                 }
-                Object[] outputData = {count};
+                Object[] outputData = {count, count, count + noOfEvents * relativeError};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
