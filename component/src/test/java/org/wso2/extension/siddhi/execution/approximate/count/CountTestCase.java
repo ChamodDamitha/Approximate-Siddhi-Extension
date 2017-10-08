@@ -14,20 +14,24 @@ import org.wso2.siddhi.core.util.EventPrinter;
 
 public class CountTestCase {
     static final Logger LOG = Logger.getLogger(CountTestCase.class);
-    private volatile int arrivedEvents;
+    private volatile int totalEvents;
+    private volatile int validEvents;
+    private volatile int eventsInsideWindow;
     private volatile boolean eventArrived;
     private long count;
 
     @Before
     public void init() {
-        arrivedEvents = 0;
+        totalEvents = 0;
+        validEvents = 0;
+        eventsInsideWindow = 0;
         eventArrived = false;
     }
 
     @Test
     public void testApproximateCount() throws InterruptedException {
-        final int noOfEvents = 1000;
-        final double relativeError = 0.00001;
+        final int noOfEvents = 10000;
+        final double relativeError = 0.001;
         final double confidence = 0.99;
 
         LOG.info("Approximate Cardinality Test Case");
@@ -35,7 +39,7 @@ public class CountTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(100)#approximate:count(number, "
+                "from inputStream#window.length(1000)#approximate:count(number, "
                 + relativeError + ", " + confidence + ") " +
                 "select * " +
                 "insert into outputStream;");
@@ -46,15 +50,18 @@ public class CountTestCase {
             @Override
             public void receive(Event[] events) {
                 EventPrinter.print(events);
-//                for (Event event : events) {
-//                    arrivedEvents++;
-//                    count = (long) event.getData(1);
-//                    if (count <= 1 + relativeError * arrivedEvents) {
-//                        Assert.assertEquals(true, true);
-//                    } else {
-//                        Assert.assertEquals(true, false);
-//                    }
-//                }
+                for (Event event : events) {
+                    totalEvents++;
+                    if (totalEvents < 1000) {
+                        eventsInsideWindow = totalEvents;
+                    } else {
+                        eventsInsideWindow = 1000;
+                    }
+                    count = (long) event.getData(1);
+                    if (count <= 1 + relativeError * eventsInsideWindow) {
+                        validEvents++;
+                    }
+                }
                 eventArrived = true;
             }
         });
@@ -62,18 +69,25 @@ public class CountTestCase {
         InputHandler inputHandler = siddhiAppRuntime.getInputHandler("inputStream");
         siddhiAppRuntime.start();
 
-//        for (double j = 0; j < 50; j++) {
-//            inputHandler.send(new Object[]{j % 10});
-//        }
 
         for (int j = 0; j < noOfEvents; j++) {
-            inputHandler.send(new Object[]{j % 100});
+            inputHandler.send(new Object[]{j});
             Thread.sleep(1);
         }
 
         Thread.sleep(100);
-//        Assert.assertEquals(noOfEvents, arrivedEvents);
+        Assert.assertEquals(noOfEvents, totalEvents);
         Assert.assertTrue(eventArrived);
+
+        System.out.println("(double) validEvents / totalEvents : " + ((double) validEvents / totalEvents));
+
+//      confidence test
+        if ((double) validEvents / totalEvents >= confidence) {
+            Assert.assertEquals(true, true);
+        } else {
+            Assert.assertEquals(true, false);
+        }
+
         siddhiAppRuntime.shutdown();
     }
 }
