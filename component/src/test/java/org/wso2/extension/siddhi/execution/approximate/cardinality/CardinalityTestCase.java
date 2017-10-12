@@ -28,8 +28,11 @@ public class CardinalityTestCase {
 
     @Test
     public void testApproximateCardinality_1() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
 
-        LOG.info("Approximate Cardinality Test Case - default relative error and confidence");
+        LOG.info("Approximate Cardinality Test Case - default relative error(" + relativeError + ") " +
+                "and confidence(" + confidence + ")");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
@@ -41,16 +44,14 @@ public class CardinalityTestCase {
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
 
         siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
-            long cardinality;
             long lowerBound;
             long upperBound;
 
             @Override
             public void receive(Event[] events) {
-                EventPrinter.print(events);
+//                EventPrinter.print(events);
                 for (Event event : events) {
                     totalCount++;
-                    cardinality = (long) event.getData(1);
                     lowerBound = (long) event.getData(2);
                     upperBound = (long) event.getData(3);
                     if (totalCount >= lowerBound && totalCount <= upperBound) {
@@ -75,10 +76,10 @@ public class CardinalityTestCase {
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
-//      System.out.println("(double) validCount / totalCount : " + ((double) validCount / totalCount));//TODO : testing
+        System.out.println("Real Confidence : " + ((double) validCount / totalCount));//TODO : testing
 
 //      confidence check
-        if ((double) validCount / totalCount >= 0.95) {
+        if ((double) validCount / totalCount >= confidence) {
             Assert.assertEquals(true, true);
         } else {
             Assert.assertEquals(true, false);
@@ -89,9 +90,11 @@ public class CardinalityTestCase {
 
     @Test
     public void testApproximateCardinality_2() throws InterruptedException {
-        double relativeError = 0.05;
+        final double relativeError = 0.05;
+        final double confidence = 0.95;
 
-        LOG.info("Approximate Cardinality Test Case - specified relative error and default confidence");
+        LOG.info("Approximate Cardinality Test Case - specified relative error(" + relativeError + ")" +
+                " and default confidence(" + confidence + ")");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
@@ -103,16 +106,14 @@ public class CardinalityTestCase {
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
 
         siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
-            long cardinality;
             long lowerBound;
             long upperBound;
 
             @Override
             public void receive(Event[] events) {
-                EventPrinter.print(events);
+//                EventPrinter.print(events);
                 for (Event event : events) {
                     totalCount++;
-                    cardinality = (long) event.getData(1);
                     lowerBound = (long) event.getData(2);
                     upperBound = (long) event.getData(3);
                     if (totalCount >= lowerBound && totalCount <= upperBound) {
@@ -137,10 +138,10 @@ public class CardinalityTestCase {
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
-        System.out.println("(double) validCount / totalCount : " + ((double) validCount / totalCount));//TODO : testing
+        System.out.println("Real Confidence : " + ((double) validCount / totalCount));//TODO : testing
 
 //      confidence check
-        if ((double) validCount / totalCount >= 0.95) {
+        if ((double) validCount / totalCount >= confidence) {
             Assert.assertEquals(true, true);
         } else {
             Assert.assertEquals(true, false);
@@ -152,10 +153,11 @@ public class CardinalityTestCase {
 
     @Test
     public void testApproximateCardinality_3() throws InterruptedException {
-        double relativeError = 0.05;
-        double confidence = 0.65;
+        final double relativeError = 0.05;
+        final double confidence = 0.65;
 
-        LOG.info("Approximate Cardinality Test Case - specified relative error and specified confidence");
+        LOG.info("Approximate Cardinality Test Case - specified relative error(" + relativeError + ")" +
+                " and specified confidence(" + confidence + ")");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
@@ -173,7 +175,7 @@ public class CardinalityTestCase {
 
             @Override
             public void receive(Event[] events) {
-                EventPrinter.print(events);
+//                EventPrinter.print(events);
                 for (Event event : events) {
                     totalCount++;
                     cardinality = (long) event.getData(1);
@@ -201,7 +203,7 @@ public class CardinalityTestCase {
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
-        System.out.println("(double) validCount / totalCount : " + ((double) validCount / totalCount));//TODO : testing
+        System.out.println("Real Confidence : " + ((double) validCount / totalCount));//TODO : testing
 
 //      confidence check
         if ((double) validCount / totalCount >= confidence) {
@@ -216,9 +218,12 @@ public class CardinalityTestCase {
     @Test
     public void testApproximateCardinality_4() throws InterruptedException {
 
-        int windowLength = 500;
+        final int windowLength = 500;
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
 
-        LOG.info("Approximate Cardinality Test Case - for Siddhi length window - default relative error and confidence");
+        LOG.info("Approximate Cardinality Test Case - for Siddhi length window - " +
+                "default relative error(" + relativeError + ") and confidence(" + confidence + ")");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
@@ -237,7 +242,7 @@ public class CardinalityTestCase {
 
             @Override
             public void receive(Event[] events) {
-                EventPrinter.print(events);
+//                EventPrinter.print(events);
                 for (Event event : events) {
                     totalCount++;
                     if (totalCount < windowLength) {
@@ -271,7 +276,7 @@ public class CardinalityTestCase {
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
-//        System.out.println("(double) validCount / totalCount : " + ((double) validCount / totalCount));//TODO : testing
+        System.out.println("Real Confidence : " + ((double) validCount / totalCount));//TODO : testing
 
 //      confidence check
         if ((double) validCount / totalCount >= 0.95) {
