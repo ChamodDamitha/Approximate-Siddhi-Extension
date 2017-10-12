@@ -19,21 +19,22 @@ package org.wso2.extension.siddhi.execution.approximate.count;
 
 import org.wso2.extension.siddhi.execution.approximate.cardinality.MurmurHash;
 
+import java.io.Serializable;
 import java.util.Random;
 
 /**
- * A probabilistic data structure to keep count of different items
+ * A probabilistic data structure to keep count of different items.
  *
  * @param <E> is the type of data to be counted
  */
-public class CountMinSketch<E> {
+public class CountMinSketch<E> implements Serializable{
 
     private int depth;
     private int width;
 
     private long totalNoOfItems;
 
-    //  2D array to store counts
+    //  2D array to store the counts
     private long[][] countArray;
 
     //  hash coefficients
@@ -47,10 +48,12 @@ public class CountMinSketch<E> {
 
     /**
      * instantiate the count min sketch based on a given relativeError and confidence
-     * actual_answer <= approximate_answer + (relativeError * numberOfInsertions)
+     * approximate_answer - (relativeError * numberOfInsertions) <= actual_answer
+     * <= approximate_answer + (relativeError * numberOfInsertions)
      *
      * @param relativeError is a positive number less than 1 (e.g. 0.01)
-     * @param confidence    is a positive number less than 1 (e.g. 0.01) which is the probability of reaching the accuracy
+     * @param confidence    is a positive number less than 1 (e.g. 0.01)
+     *                      which is the probability of answers being within the relative error
      */
     public CountMinSketch(double relativeError, double confidence) {
         if (!(relativeError < 1 && relativeError > 0) || !(confidence < 1 && confidence > 0)) {
@@ -62,7 +65,9 @@ public class CountMinSketch<E> {
         this.relativeError = relativeError;
         this.confidence = confidence;
 
+//      depth = ln(1 / (1 - confidence))
         this.depth = (int) Math.ceil(Math.log(1 / (1 - confidence)));
+//      width = e / relativeError
         this.width = (int) Math.ceil(Math.E / relativeError);
 
         this.countArray = new long[depth][width];
@@ -80,7 +85,7 @@ public class CountMinSketch<E> {
     }
 
     /**
-     * Compute a cell position in a row of the count array for a given hash value
+     * Compute the cell position in a row of the count array for a given hash value
      *
      * @param hash is the integer hash value generated from some hash function
      * @return an integer value in the range [0,width)
@@ -91,10 +96,10 @@ public class CountMinSketch<E> {
 
 
     /**
-     * Compute a set of different int values for a byte array of data
+     * Compute a set of different integer hash values for a given item
      *
-     * @param item is the object for which the hash values are needed
-     * @return an int array of hash values
+     * @param item is the object for which the hash values are calculated
+     * @return an int array(of size {@code depth}) of hash values
      */
     private int[] getHashValues(E item) {
         int[] hashValues = new int[depth];
@@ -107,7 +112,7 @@ public class CountMinSketch<E> {
 
     /**
      * Adds the count of an item to the count min sketch
-     * calculate hash values for number of row in the count array
+     * calculate hash values relevant for each row in the count array
      * compute indices in the range of [0, width) from those hash values
      * increment each value in the cell of relevant row and index (e.g. countArray[row][index]++)
      *
@@ -138,7 +143,7 @@ public class CountMinSketch<E> {
 
     /**
      * Removes the count of an item from the count min sketch
-     * calculate hash values for number of row in the count array
+     * calculate hash values relevant for each row in the count array
      * compute indices in the range of [0, width) from those hash values
      * decrement each value in the cell of relevant row and index (e.g. countArray[row][index]--)
      *
@@ -167,9 +172,9 @@ public class CountMinSketch<E> {
     }
 
     /**
-     * Compute the approximate count for a given item
-     * Check the relevant cell values for the given item by hashing it to cell indices
-     * Then take the minimum out of those values
+     * Compute the approximate count for a given item.
+     * Check the relevant cell values for the given item by hashing it to cell indices.
+     * Then take the minimum out of those values.
      * @param item to be counted
      * @return a long array which contains the approximate count, lower bound and the upper bound
      * of the confidence interval consecutively
@@ -199,7 +204,8 @@ public class CountMinSketch<E> {
 
     /**
      * Calculate the confidence interval of the approximate count
-     * approximateCount <= exactCount <= approximateCount + (totalNoOfItems * relativeError)
+     * approximateCount - (totalNoOfItems * relativeError) <= exactCount
+     * <= approximateCount + (totalNoOfItems * relativeError)
      * @param count
      * @return a long array which contains the count, the lower bound and
      * the upper bound of the confidence interval consecutively

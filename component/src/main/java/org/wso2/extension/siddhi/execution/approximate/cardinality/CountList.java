@@ -17,18 +17,23 @@
 */
 package org.wso2.extension.siddhi.execution.approximate.cardinality;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class CountQueue {
+/**
+ * A data structure to keep track of maximum zero counts for a bucket
+ * to restore the previous maximums when the old counts are removed.
+ */
+public class CountList implements Serializable{
 
     ArrayList<Integer> counts;
 
-    public CountQueue() {
+    public CountList() {
         counts = new ArrayList<>();
     }
 
     /**
-     * Add new value to the counts depending on previous value
+     * Add new value to the counts if the previous values are greater than or equal to the new value.
      *
      * @param newValue
      * @return {@code true} if the newValue is added, {@code false} if the newValue is not added
@@ -57,8 +62,8 @@ public class CountQueue {
     /**
      * Remove the given value from the counts
      *
-     * @return the next value if the removed value is the first value,
-     * -1 if no value is returned
+     * @return the next count value if the removed value was the first value in the list,
+     * -1 if the removed value does not affect the counts, 0 if the list is empty
      */
     public int remove(int value) {
         if (counts.size() > 0) {

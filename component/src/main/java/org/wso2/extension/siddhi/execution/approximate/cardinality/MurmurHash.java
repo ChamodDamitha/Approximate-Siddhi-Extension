@@ -18,10 +18,12 @@
 
 package org.wso2.extension.siddhi.execution.approximate.cardinality;
 
+import java.io.Serializable;
+
 /**
  * Calculate integer hash values for any type of object
  */
-public final class MurmurHash {
+public final class MurmurHash implements Serializable{
     private MurmurHash() {
     }
 

@@ -17,12 +17,14 @@
 */
 package org.wso2.extension.siddhi.execution.approximate.cardinality;
 
+import java.io.Serializable;
+
 /**
  * A probabilistic data structure to calculate cardinality of a set
  *
- * @param <E> is the type of objects in the set
+ * @param <E> is the type of objects in the set.
  */
-public class HyperLogLog<E> {
+public class HyperLogLog<E> implements Serializable{
     private final double standardError = 1.04;
     private final double pow2to32 = Math.pow(2, 32);
 
@@ -38,7 +40,7 @@ public class HyperLogLog<E> {
     private long currentCardinality;
 
     private int[] countArray;
-    private CountQueue[] pastCountsArray;
+    private CountList[] pastCountsArray;
 
     /**
      * Create a new HyperLogLog by specifying the relative error and confidence of answers
@@ -55,6 +57,7 @@ public class HyperLogLog<E> {
 //      relativeError = standardError / sqrt(noOfBuckets) = > noOfBuckets = (standardError / relativeError) ^ 2
         noOfBuckets = (int) Math.ceil(Math.pow(standardError / relativeError, 2));
 
+//      noOfBuckets = 2 ^ lengthOfBucketId = >  lengthOfBucketId = log2(noOfBuckets) = ln(noOfBuckets) / ln(2)
         lengthOfBucketId = (int) Math.ceil(Math.log(noOfBuckets) / Math.log(2));
 
         noOfBuckets = (1 << lengthOfBucketId);
@@ -65,9 +68,9 @@ public class HyperLogLog<E> {
         }
 
         countArray = new int[noOfBuckets];
-        pastCountsArray = new CountQueue[noOfBuckets];
+        pastCountsArray = new CountList[noOfBuckets];
         for (int i = 0; i < noOfBuckets; i++) {
-            pastCountsArray[i] = new CountQueue();
+            pastCountsArray[i] = new CountList();
         }
 
         estimationFactor = getEstimationFactor(lengthOfBucketId, noOfBuckets);
@@ -81,6 +84,13 @@ public class HyperLogLog<E> {
      * Calculate the cardinality(number of unique items in a set)
      * by calculating the harmonic mean of the counts in the buckets.
      * Check for the upper and lower bounds to modify the estimation.
+     *
+     * n - number of buckets
+     * ci - count of the i th bucket
+     *
+     * harmonic count mean = n / ((1/2)^c1 + (1/2)^c2 + ... + (1/2)^cn)
+     *
+     * estimated cardinality = n * estimationFactor * harmonicCountMean
      */
     private void calculateCardinality() {
 
@@ -116,22 +126,23 @@ public class HyperLogLog<E> {
 
     /**
      * Calculate the confidence interval for the current cardinality.
-     * The confidence values can be one out of 0.65, 0.95, 0.99.
+     * The confidence values can be one value out of 0.65, 0.95, 0.99.
      * @return an long array which contain the lower bound and the upper bound of the confidence interval
-     * e.g. - {313, 350} for the cardinality of 320
+     * e.g. - {310, 350} for the cardinality of 330
      */
     public long[] getConfidenceInterval() {
         long[] confidenceInterval = new long[2];
 
-        if (confidence == 0.65) {
+//      sigma = relative error
+        if (confidence == 0.65) {//      65% sure the answer in the range of sigma
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 0.5));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError * 0.5));
         }
-        else if (confidence == 0.95) {
+        else if (confidence == 0.95) {//      95% sure the answer in the range of (2 * sigma)
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError));
         }
-        else if (confidence == 0.99) {
+        else if (confidence == 0.99) {//      99% sure the answer in the range of (3 * sigma)
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 1.5));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError* 1.5));
         }
@@ -176,7 +187,7 @@ public class HyperLogLog<E> {
     }
 
     /**
-     * Removes the given item from the array and restore the cardinality value by using the previous count
+     * Removes the given item from the array and restore the cardinality value by using the previous count.
      *
      * @param item
      */
@@ -189,9 +200,9 @@ public class HyperLogLog<E> {
 //      Shift all the bits to left till the bucket id is removed
         int remainingValue = hash << lengthOfBucketId;
 
-        int noOfLeadingZeros = Integer.numberOfLeadingZeros(remainingValue) + 1;
+        int currentLeadingZeroCount = Integer.numberOfLeadingZeros(remainingValue) + 1;
 
-        int newLeadingZeroCount = pastCountsArray[bucketId].remove(noOfLeadingZeros);
+        int newLeadingZeroCount = pastCountsArray[bucketId].remove(currentLeadingZeroCount);
         int oldLeadingZeroCount = countArray[bucketId];
 
 //      check the next maximum leading zero count
