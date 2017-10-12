@@ -17,7 +17,6 @@
 */
 package org.wso2.extension.siddhi.execution.approximate.cardinality;
 
-
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
@@ -32,25 +31,31 @@ public class HyperLogLog<E> {
 
     private int noOfBuckets;
     private int lengthOfBucketId;
+    private int noOfZeroBuckets;
+
+    private double estimationFactor;
+    private double relativeError;
+    private double confidence;
+    private double harmonicCountSum;
+
+    private long currentCardinality;
+
     private int[] countArray;
     private CountQueue[] pastCountsArray;
 
-    private double estimationFactor;
-
-    private double relativeError;
-
-
-    private double harmonicCountSum;
-    private int noOfZeroBuckets;
+    private HashFunction hashFunction;
 
     /**
-     * Create a new HyperLogLog by specifying the accuracy
-     * Based on the accuracy the array size is calculated
+     * Create a new HyperLogLog by specifying the relative error and confidence of answers
+     * being within the error margin
+     * Based on the relative error the array size is calculated
      *
      * @param relativeError is a number in the range (0, 1)
+     * @param confidence is a value out of 0.65, 0.95, 0.99
      */
-    public HyperLogLog(double relativeError) {
+    public HyperLogLog(double relativeError, double confidence) {
         this.relativeError = relativeError;
+        this.confidence = confidence;
 
 //      relativeError = standardError / sqrt(noOfBuckets) = > noOfBuckets = (standardError / relativeError) ^ 2
         noOfBuckets = (int) Math.ceil(Math.pow(standardError / relativeError, 2));
@@ -74,26 +79,16 @@ public class HyperLogLog<E> {
 
         harmonicCountSum = noOfBuckets;
         noOfZeroBuckets = noOfBuckets;
-    }
 
-    /**
-     * Compute the relative error using the count array size
-     * relative error = standardError / sqrt(noOfBuckets)
-     *
-     * @return the relative error value
-     */
-    public double getRelativeError() {
-        return (standardError / Math.sqrt(noOfBuckets));
+        hashFunction = Hashing.murmur3_128(123);
     }
 
     /**
      * Calculate the cardinality(number of unique items in a set)
      * by calculating the harmonic mean of the counts in the buckets.
      * Check for the upper and lower bounds to modify the estimation.
-     *
-     * @return the cardinality value
      */
-    public long getCardinality() {
+    private void calculateCardinality() {
 
         double harmonicCountMean;
         long estimatedCardinality;
@@ -115,25 +110,42 @@ public class HyperLogLog<E> {
         } else {
             cardinality = estimatedCardinality;
         }
-        return cardinality;
+        this.currentCardinality = cardinality;
     }
 
     /**
-     * Calculate the confidence interval for the cardinality
+     * @return the current cardinality value
+     */
+    public long getCardinality() {
+        return this.currentCardinality;
+    }
+
+    /**
+     * Calculate the confidence interval for the current cardinality
      *
      * @return an long array which contain the lower bound and the upper bound of the confidence interval
      * e.g. - {313, 350} for the cardinality of 320
      */
     public long[] getConfidenceInterval() {
-        long cardinality = getCardinality();
         long[] confidenceInterval = new long[2];
-        confidenceInterval[0] = (long) Math.floor(cardinality - (cardinality * relativeError));
-        confidenceInterval[1] = (long) Math.ceil(cardinality + (cardinality * relativeError));
+
+        if (confidence == 0.65) {
+            confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 0.5));
+            confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError * 0.5));
+        }
+        else if (confidence == 0.95) {
+            confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError));
+            confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError));
+        }
+        else if (confidence == 0.99) {
+            confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 1.5));
+            confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError* 1.5));
+        }
         return confidenceInterval;
     }
 
     /**
-     * Adds a new item to the array by hashing and setting the count of relevant bucckets
+     * Adds a new item to the array by hashing and setting the count of relevant buckets
      *
      * @param item
      */
@@ -148,7 +160,25 @@ public class HyperLogLog<E> {
 
         int noOfLeadingZeros = Integer.numberOfLeadingZeros(remainingValue) + 1;
 
-        updateBucket(bucketId, noOfLeadingZeros);
+//      update the value in the  bucket
+        int currentZeroCount = countArray[bucketId];
+        pastCountsArray[bucketId].add(noOfLeadingZeros);
+        if (currentZeroCount < noOfLeadingZeros) {
+
+            harmonicCountSum = harmonicCountSum - (1.0 / (1L << currentZeroCount))
+                    + (1.0 / (1L << noOfLeadingZeros));
+
+            if (currentZeroCount == 0) {
+                noOfZeroBuckets--;
+            }
+            if (noOfLeadingZeros == 0) {
+                noOfZeroBuckets++;
+            }
+
+            countArray[bucketId] = noOfLeadingZeros;
+
+            calculateCardinality();
+        }
     }
 
     /**
@@ -170,6 +200,7 @@ public class HyperLogLog<E> {
         int newLeadingZeroCount = pastCountsArray[bucketId].remove(noOfLeadingZeros);
         int oldLeadingZeroCount = countArray[bucketId];
 
+//      check the next maximum leading zero count
         if (newLeadingZeroCount >= 0) {
 
             harmonicCountSum = harmonicCountSum - (1.0 / (1L << oldLeadingZeroCount))
@@ -182,37 +213,11 @@ public class HyperLogLog<E> {
             }
 
             countArray[bucketId] = newLeadingZeroCount;
+
+            calculateCardinality();
         }
+
     }
-
-    /**
-     * Update the zero count value in the relevant bucket if the given value is larger than the existing value
-     *
-     * @param index            is the bucket ID of the relevant bucket
-     * @param leadingZeroCount is the new zero count
-     * @return {@code true} if the bucket is updated, {@code false} if the bucket is not updated
-     */
-    private boolean updateBucket(int index, int leadingZeroCount) {
-        long currentZeroCount = countArray[index];
-        pastCountsArray[index].add(leadingZeroCount);
-        if (currentZeroCount < leadingZeroCount) {
-
-            harmonicCountSum = harmonicCountSum - (1.0 / (1L << currentZeroCount))
-                    + (1.0 / (1L << leadingZeroCount));
-
-            if (currentZeroCount == 0) {
-                noOfZeroBuckets--;
-            }
-            if (leadingZeroCount == 0) {
-                noOfZeroBuckets++;
-            }
-
-            countArray[index] = leadingZeroCount;
-            return true;
-        }
-        return false;
-    }
-
 
     /**
      * Compute an integer hash value for a given value
@@ -243,6 +248,12 @@ public class HyperLogLog<E> {
                 return (0.7213 / (1 + 1.079 / noOfBuckets));
         }
     }
+
+    public double getRelativeError() {
+        return relativeError;
+    }
+
+    public double getConfidence() { return confidence; }
 }
 
 

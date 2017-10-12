@@ -49,7 +49,8 @@ import java.util.Map;
 @Extension(
         name = "cardinality",
         namespace = "approximate",
-        description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error. ",
+        description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
+                " and confidence. ",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -83,53 +84,103 @@ import java.util.Map;
         examples = {
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
-                                "from InputStream#approximate:cardinality(some_attribute, 0.01)\n" +
+                                "from InputStream#approximate:cardinality(some_attribute)\n" +
                                 "select cardinality\n" +
                                 "insert into OutputStream;",
-                        description = "cardinality of events based on some_attribute is " +
-                                "calculated for a relative error of 0.01"
+                        description = "cardinality of events in a stream based on some_attribute is " +
+                                "calculated for a default relative error of 0.01 and  a default confidence of 0.95"
+                ),
+                @Example(
+                        syntax = "define stream InputStream (some_attribute int);" +
+                                "from InputStream#approximate:cardinality(some_attribute, 0.05)\n" +
+                                "select cardinality\n" +
+                                "insert into OutputStream;",
+                        description = "cardinality of events in a stream based on some_attribute is " +
+                                "calculated for a relative error of 0.05 and a default confidence of 0.95"
+                ),
+                @Example(
+                        syntax = "define stream InputStream (some_attribute int);" +
+                                "from InputStream#approximate:cardinality(some_attribute, 0.05, 0.65)\n" +
+                                "select cardinality\n" +
+                                "insert into OutputStream;",
+                        description = "cardinality of events in a stream based on some_attribute is " +
+                                "calculated for a relative error of 0.05 and a confidence of 0.65"
+                ),
+                @Example(
+                        syntax = "define stream InputStream (some_attribute int);" +
+                                "from InputStream#window.length(1000)" +
+                                "#approximate:cardinality(some_attribute, 0.05, 0.65)\n" +
+                                "select cardinality\n" +
+                                "insert into OutputStream;",
+                        description = "cardinality of events in a length window based on some_attribute is " +
+                                "calculated for a relative error of 0.05 and a confidence of 0.65"
                 ),
         }
 )
 public class CardinalityExtension extends StreamProcessor {
     private static final Logger logger = Logger.getLogger(CardinalityExtension.class.getName());
-    private double relativeError = 0.01;
-    private long cardinality;
     private HyperLogLog hyperLogLog;
 
     @Override
     protected List<Attribute> init(AbstractDefinition inputDefinition,
                                    ExpressionExecutor[] attributeExpressionExecutors, ConfigReader configReader,
                                    SiddhiAppContext siddhiAppContext) {
+
+//      default values for relative error and confidence
+        double relativeError = 0.01;
+        double confidence = 0.95;
+
 //       validate number of attributes
-        if (attributeExpressionExecutors.length != 2) {
-            throw new SiddhiAppCreationException("2 attributes are expected but " +
+        if (!(attributeExpressionExecutors.length >= 1 && attributeExpressionExecutors.length <= 3)) {
+            throw new SiddhiAppCreationException("1 - 3 attributes are expected but " +
                     attributeExpressionExecutors.length + " attributes are found inside the cardinality function");
         }
 
         //expressionExecutors[1] --> relativeError
-        if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
-            throw new SiddhiAppCreationException("relativeError has to be a constant but found " +
-                    this.attributeExpressionExecutors[1].getClass().getCanonicalName());
+        if (attributeExpressionExecutors.length > 1) {
+
+            if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
+                throw new SiddhiAppCreationException("relative error has to be a constant but found " +
+                        this.attributeExpressionExecutors[1].getClass().getCanonicalName());
+            }
+
+            if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
+                relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
+            } else {
+                throw new SiddhiAppCreationException("relative error should be of type Double but found " +
+                        attributeExpressionExecutors[1].getReturnType());
+            }
+
+            if ((relativeError <= 0) || (relativeError >= 1)) {
+                throw new SiddhiAppCreationException("relative error must be in the range of (0, 1)");
+            }
         }
 
-        if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
-            relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
-        } else {
-            throw new SiddhiAppCreationException("relativeError should be of type Double but found " +
-                    attributeExpressionExecutors[1].getReturnType());
+        //expressionExecutors[2] --> confidence
+        if (attributeExpressionExecutors.length > 2) {
+            if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
+                throw new SiddhiAppCreationException("confidence has to be a constant but found " +
+                        this.attributeExpressionExecutors[2].getClass().getCanonicalName());
+            }
+
+            if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
+                confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
+            } else {
+                throw new SiddhiAppCreationException("confidence should be of type Double but found " +
+                        attributeExpressionExecutors[2].getReturnType());
+            }
+
+            if (confidence != 0.65 && confidence != 0.95 && confidence != 0.99) {
+                throw new SiddhiAppCreationException("confidence must be a value from 0.65, 0.95 and 0.99");
+            }
         }
 
-        if ((relativeError <= 0) || (relativeError >= 1)) {
-            throw new SiddhiAppCreationException("relativeError must be in the range of (0, 1)");
-        }
-
-        hyperLogLog = new HyperLogLog(relativeError);
+        hyperLogLog = new HyperLogLog(relativeError, confidence);
 
         List<Attribute> attributeList = new ArrayList<>(3);
         attributeList.add(new Attribute("cardinality", Attribute.Type.LONG));
-        attributeList.add(new Attribute("lower.bound", Attribute.Type.LONG));
-        attributeList.add(new Attribute("upper.bound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("lowerBound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("upperBound", Attribute.Type.LONG));
         return attributeList;
     }
 
@@ -146,15 +197,14 @@ public class CardinalityExtension extends StreamProcessor {
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
                     hyperLogLog.removeItem(newData);
                 }
-                cardinality = hyperLogLog.getCardinality();
 
-                Object[] outputData = {cardinality, cardinality - cardinality * relativeError,
-                        cardinality + cardinality * relativeError};
+                Object[] outputData = {hyperLogLog.getCardinality(), hyperLogLog.getConfidenceInterval()[0],
+                        hyperLogLog.getConfidenceInterval()[1]};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
                 } else {
-//                    logger.debug("Populating output");
+                    logger.debug("Populating output");
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }
             }
@@ -177,7 +227,6 @@ public class CardinalityExtension extends StreamProcessor {
         synchronized (this) {
             Map<String, Object> map = new HashMap();
             map.put("hyperLogLog", hyperLogLog);
-            map.put("relativeError", relativeError);
             logger.debug("storing hyperLogLog");
             return map;
         }
@@ -186,7 +235,6 @@ public class CardinalityExtension extends StreamProcessor {
     @Override
     public void restoreState(Map<String, Object> map) {
         synchronized (this) {
-            relativeError = (Double) map.get("relativeError");
             hyperLogLog = (HyperLogLog) map.get("hyperLogLog");
         }
     }

@@ -14,7 +14,7 @@ public class CountQueue {
      * Add new value to the counts depending on previous value
      *
      * @param newValue
-     * @return
+     * @return {@code true} if the newValue is added, {@code false} if the newValue is not added
      */
     public boolean add(int newValue) {
         if (counts.size() > 0) {

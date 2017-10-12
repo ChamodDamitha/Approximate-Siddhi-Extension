@@ -16,6 +16,7 @@ public class CardinalityTestCase {
     static final Logger LOG = Logger.getLogger(CardinalityTestCase.class);
     private volatile int totalCount;
     private volatile int validCount;
+    private final int noOfEvents = 1000;
     private volatile boolean eventArrived;
 
     @Before
@@ -26,16 +27,14 @@ public class CardinalityTestCase {
     }
 
     @Test
-    public void testApproximateCardinality() throws InterruptedException {
-        final int noOfEvents = 10000;
-        final double relativeError = 0.005;
+    public void testApproximateCardinality_1() throws InterruptedException {
 
-        LOG.info("Approximate Cardinality Test Case");
+        LOG.info("Approximate Cardinality Test Case - default relative error and confidence");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#approximate:cardinality(number, " + relativeError + ") " +
+                "from inputStream#approximate:cardinality(number) " +
                 "select * " +
                 "insert into outputStream;");
 
@@ -43,15 +42,18 @@ public class CardinalityTestCase {
 
         siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
             long cardinality;
+            long lowerBound;
+            long upperBound;
 
             @Override
             public void receive(Event[] events) {
-//                EventPrinter.print(events);
+                EventPrinter.print(events);
                 for (Event event : events) {
                     totalCount++;
                     cardinality = (long) event.getData(1);
-                    if (totalCount >= Math.floor(cardinality - cardinality * relativeError)
-                            && totalCount <= Math.ceil(cardinality + cardinality * relativeError)) {
+                    lowerBound = (long) event.getData(2);
+                    upperBound = (long) event.getData(3);
+                    if (totalCount >= lowerBound && totalCount <= upperBound) {
                         validCount++;
                     }
                 }
@@ -69,6 +71,203 @@ public class CardinalityTestCase {
         }
 
         Thread.sleep(100);
+
+        Assert.assertEquals(noOfEvents, totalCount);
+        Assert.assertTrue(eventArrived);
+
+//      System.out.println("(double) validCount / totalCount : " + ((double) validCount / totalCount));//TODO : testing
+
+//      confidence check
+        if ((double) validCount / totalCount >= 0.95) {
+            Assert.assertEquals(true, true);
+        } else {
+            Assert.assertEquals(true, false);
+        }
+
+        siddhiAppRuntime.shutdown();
+    }
+
+    @Test
+    public void testApproximateCardinality_2() throws InterruptedException {
+        double relativeError = 0.05;
+
+        LOG.info("Approximate Cardinality Test Case - specified relative error and default confidence");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:cardinality(number, " + relativeError + ") " +
+                "select * " +
+                "insert into outputStream;");
+
+        SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+
+        siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
+            long cardinality;
+            long lowerBound;
+            long upperBound;
+
+            @Override
+            public void receive(Event[] events) {
+                EventPrinter.print(events);
+                for (Event event : events) {
+                    totalCount++;
+                    cardinality = (long) event.getData(1);
+                    lowerBound = (long) event.getData(2);
+                    upperBound = (long) event.getData(3);
+                    if (totalCount >= lowerBound && totalCount <= upperBound) {
+                        validCount++;
+                    }
+                }
+                eventArrived = true;
+            }
+        });
+
+        InputHandler inputHandler = siddhiAppRuntime.getInputHandler("inputStream");
+        siddhiAppRuntime.start();
+
+
+        for (int j = 0; j < noOfEvents; j++) {
+            inputHandler.send(new Object[]{j});
+            Thread.sleep(1);
+        }
+
+        Thread.sleep(100);
+
+        Assert.assertEquals(noOfEvents, totalCount);
+        Assert.assertTrue(eventArrived);
+
+        System.out.println("(double) validCount / totalCount : " + ((double) validCount / totalCount));//TODO : testing
+
+//      confidence check
+        if ((double) validCount / totalCount >= 0.95) {
+            Assert.assertEquals(true, true);
+        } else {
+            Assert.assertEquals(true, false);
+        }
+
+        siddhiAppRuntime.shutdown();
+    }
+
+
+    @Test
+    public void testApproximateCardinality_3() throws InterruptedException {
+        double relativeError = 0.05;
+        double confidence = 0.65;
+
+        LOG.info("Approximate Cardinality Test Case - specified relative error and specified confidence");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:cardinality(number, " + relativeError + ", " + confidence + ") " +
+                "select * " +
+                "insert into outputStream;");
+
+        SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+
+        siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
+            long cardinality;
+            long lowerBound;
+            long upperBound;
+
+            @Override
+            public void receive(Event[] events) {
+                EventPrinter.print(events);
+                for (Event event : events) {
+                    totalCount++;
+                    cardinality = (long) event.getData(1);
+                    lowerBound = (long) event.getData(2);
+                    upperBound = (long) event.getData(3);
+                    if (totalCount >= lowerBound && totalCount <= upperBound) {
+                        validCount++;
+                    }
+                }
+                eventArrived = true;
+            }
+        });
+
+        InputHandler inputHandler = siddhiAppRuntime.getInputHandler("inputStream");
+        siddhiAppRuntime.start();
+
+
+        for (int j = 0; j < noOfEvents; j++) {
+            inputHandler.send(new Object[]{j});
+            Thread.sleep(1);
+        }
+
+        Thread.sleep(100);
+
+        Assert.assertEquals(noOfEvents, totalCount);
+        Assert.assertTrue(eventArrived);
+
+        System.out.println("(double) validCount / totalCount : " + ((double) validCount / totalCount));//TODO : testing
+
+//      confidence check
+        if ((double) validCount / totalCount >= confidence) {
+            Assert.assertEquals(true, true);
+        } else {
+            Assert.assertEquals(true, false);
+        }
+
+        siddhiAppRuntime.shutdown();
+    }
+
+    @Test
+    public void testApproximateCardinality_4() throws InterruptedException {
+
+        int windowLength = 500;
+
+        LOG.info("Approximate Cardinality Test Case - for Siddhi length window - default relative error and confidence");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#window.length(" + windowLength + ")#approximate:cardinality(number) " +
+                "select * " +
+                "insert into outputStream;");
+
+        SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+
+        siddhiAppRuntime.addCallback("outputStream", new StreamCallback() {
+            long cardinality;
+            long exactCardinality;
+            long lowerBound;
+            long upperBound;
+
+            @Override
+            public void receive(Event[] events) {
+                EventPrinter.print(events);
+                for (Event event : events) {
+                    totalCount++;
+                    if (totalCount < windowLength) {
+                        exactCardinality = totalCount;
+                    } else {
+                        exactCardinality = windowLength;
+                    }
+
+                    cardinality = (long) event.getData(1);
+                    lowerBound = (long) event.getData(2);
+                    upperBound = (long) event.getData(3);
+                    if (exactCardinality >= lowerBound && exactCardinality <= upperBound) {
+                        validCount++;
+                    }
+                }
+                eventArrived = true;
+            }
+        });
+
+        InputHandler inputHandler = siddhiAppRuntime.getInputHandler("inputStream");
+        siddhiAppRuntime.start();
+
+
+        for (int j = 0; j < noOfEvents; j++) {
+            inputHandler.send(new Object[]{j});
+            Thread.sleep(1);
+        }
+
+        Thread.sleep(100);
+
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
