@@ -50,7 +50,7 @@ import java.util.Map;
         name = "cardinality",
         namespace = "approximate",
         description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
-                " and confidence. ",
+                " and a confidence value to calculate the unique count of the events(cardinality).",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -61,7 +61,16 @@ import java.util.Map;
                 @Parameter(
                         name = "relative.error",
                         description = "this is the relative error for which the cardinality is obtained",
-                        type = {DataType.DOUBLE}
+                        type = {DataType.DOUBLE},
+                        optional = true,
+                        defaultValue = "0.01"
+                ),
+                @Parameter(
+                        name = "confidence",
+                        description = "this is the confidence for which the relative error is true",
+                        type = {DataType.DOUBLE},
+                        optional = true,
+                        defaultValue = "0.95"
                 )
         },
         returnAttributes = {

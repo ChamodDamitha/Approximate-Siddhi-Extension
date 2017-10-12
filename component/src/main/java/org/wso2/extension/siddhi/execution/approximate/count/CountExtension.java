@@ -51,11 +51,11 @@ import java.util.Map;
         name = "count",
         namespace = "approximate",
         description = "Performs Count-min-sketch algorithm on a streaming data set based on a specific " +
-                "relative error and confidence. ",
+                "relative error and  a confidence value. ",
         parameters = {
                 @Parameter(
                         name = "value",
-                        description = "The value used to find count",
+                        description = "The value used to find the count",
                         type = {DataType.INT, DataType.DOUBLE, DataType.FLOAT, DataType.LONG, DataType.STRING,
                                 DataType.BOOL, DataType.TIME, DataType.OBJECT}
                 ),
