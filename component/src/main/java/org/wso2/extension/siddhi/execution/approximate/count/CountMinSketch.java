@@ -1,4 +1,4 @@
-package org.wso2.extension.siddhi.execution.approximate.count;/*
+/*
 * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 *
 * WSO2 Inc. licenses this file to you under the Apache License,
@@ -15,6 +15,7 @@ package org.wso2.extension.siddhi.execution.approximate.count;/*
 * specific language governing permissions and limitations
 * under the License.
 */
+package org.wso2.extension.siddhi.execution.approximate.count;
 
 import org.wso2.extension.siddhi.execution.approximate.cardinality.MurmurHash;
 
@@ -29,6 +30,8 @@ public class CountMinSketch<E> {
 
     private int depth;
     private int width;
+
+    private long totalNoOfItems;
 
     //  2D array to store counts
     private long[][] countArray;
@@ -53,6 +56,8 @@ public class CountMinSketch<E> {
         if (!(relativeError < 1 && relativeError > 0) || !(confidence < 1 && confidence > 0)) {
             throw new IllegalArgumentException("confidence and relativeError must be values in the range (0,1)");
         }
+
+        this.totalNoOfItems = 0;
 
         this.relativeError = relativeError;
         this.confidence = confidence;
@@ -107,9 +112,12 @@ public class CountMinSketch<E> {
      * increment each value in the cell of relevant row and index (e.g. countArray[row][index]++)
      *
      * @param item
-     * @return count of the item
+     * @return a long array which contains the approximate count, lower bound and the upper bound
+     * of the confidence interval consecutively
      */
-    public long insert(E item) {
+    public long[] insert(E item) {
+        totalNoOfItems++;
+
         int[] hashValues = getHashValues(item);
         int index;
         long currentMin = Long.MAX_VALUE;
@@ -125,7 +133,7 @@ public class CountMinSketch<E> {
             }
         }
 
-        return currentMin + 1;
+        return getConfidenceInterval(currentMin + 1);
     }
 
     /**
@@ -135,9 +143,12 @@ public class CountMinSketch<E> {
      * decrement each value in the cell of relevant row and index (e.g. countArray[row][index]--)
      *
      * @param item
-     * @return count of the item
+     * @return a long array which contains the approximate count, lower bound and the upper bound
+     * of the confidence interval consecutively
      */
-    public long remove(E item) {
+    public long[] remove(E item) {
+        totalNoOfItems--;
+
         int[] hashValues = getHashValues(item);
         int index;
         long currentMin = Long.MAX_VALUE;
@@ -152,18 +163,18 @@ public class CountMinSketch<E> {
                 currentMin = currentVal;
             }
         }
-        return currentMin - 1;
+        return getConfidenceInterval(currentMin - 1);
     }
 
     /**
      * Compute the approximate count for a given item
      * Check the relevant cell values for the given item by hashing it to cell indices
      * Then take the minimum out of those values
-     *
-     * @param item
-     * @return
+     * @param item to be counted
+     * @return a long array which contains the approximate count, lower bound and the upper bound
+     * of the confidence interval consecutively
      */
-    public long approximateCount(E item) {
+    public long[] approximateCount(E item) {
         int[] hashValues = getHashValues(item);
         int index;
 
@@ -179,12 +190,28 @@ public class CountMinSketch<E> {
         }
 //      if item not found
         if (minCount == Long.MAX_VALUE) {
-            return 0;
+            return new long[]{0, 0, 0};
         }
 //      if item is found
-        return minCount;
+        return getConfidenceInterval(minCount);
     }
 
+
+    /**
+     * Calculate the confidence interval of the approximate count
+     * approximateCount <= exactCount <= approximateCount + (totalNoOfItems * relativeError)
+     * @param count
+     * @return a long array which contains the count, the lower bound and
+     * the upper bound of the confidence interval consecutively
+     */
+    private long[] getConfidenceInterval(long count) {
+        if (count - (long) (totalNoOfItems * relativeError) > 0) {
+            return new long[]{count, count - (long) (totalNoOfItems * relativeError),
+                    (long) (count + (totalNoOfItems * relativeError))};
+        } else {
+            return new long[]{count, 0, (long) (count + (totalNoOfItems * relativeError))};
+        }
+    }
 
     /**
      * Return the relativeError of the count min sketch

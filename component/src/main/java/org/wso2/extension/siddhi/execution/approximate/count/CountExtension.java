@@ -19,7 +19,6 @@
 package org.wso2.extension.siddhi.execution.approximate.count;
 
 import org.apache.log4j.Logger;
-import org.wso2.extension.siddhi.execution.approximate.cardinality.HyperLogLog;
 import org.wso2.siddhi.annotation.Example;
 import org.wso2.siddhi.annotation.Extension;
 import org.wso2.siddhi.annotation.Parameter;
@@ -94,7 +93,7 @@ import java.util.Map;
         examples = {
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
-                                "from InputStream#approximate:count(some_attribute, 0.01, 0.9)\n" +
+                                "from InputStream#approximate:count(some_attribute)\n" +
                                 "select count\n" +
                                 "insert into OutputStream;",
                         description = "count of events based on some_attribute is " +
@@ -102,71 +101,98 @@ import java.util.Map;
                 ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
-                                "from InputStream#approximate:count(some_attribute, 0.01, 0.9)\n" +
+                                "from InputStream#approximate:count(some_attribute, 0.05)\n" +
                                 "select count\n" +
                                 "insert into OutputStream;",
                         description = "count of events based on some_attribute is " +
-                                "calculated for an relative error of 0.01 and confidence of 0.9"
+                                "calculated for an relative error of 0.05 and a default confidence of 0.9"
+                ),
+                @Example(
+                        syntax = "define stream InputStream (some_attribute int);" +
+                                "from InputStream#approximate:count(some_attribute, 0.05, 0.99)\n" +
+                                "select count\n" +
+                                "insert into OutputStream;",
+                        description = "count of events based on some_attribute is " +
+                                "calculated for an relative error of 0.05 and a confidence of 0.99"
+                ),
+                @Example(
+                        syntax = "define stream InputStream (some_attribute int);" +
+                                "from InputStream#window.length(1000)#approximate:count(some_attribute, 0.05, 0.99)\n" +
+                                "select count\n" +
+                                "insert into OutputStream;",
+                        description = "count of events in a length window based on some_attribute is " +
+                                "calculated for an relative error of 0.05 and a confidence of 0.99"
                 ),
         }
 )
 public class CountExtension extends StreamProcessor {
     private static final Logger logger = Logger.getLogger(CountExtension.class.getName());
-    private double relativeError = 0.01;
-    private double confidence = 0.9;
+
     private CountMinSketch countMinSketch;
-    private long noOfEvents = 0;
+
+    long[] approximateCount = new long[3];
 
     @Override
     protected List<Attribute> init(AbstractDefinition inputDefinition,
                                    ExpressionExecutor[] attributeExpressionExecutors, ConfigReader configReader,
                                    SiddhiAppContext siddhiAppContext) {
+
+//      default values for relative error and confidence
+        double relativeError = 0.01;
+        double confidence = 0.9;
+
 //       validate number of attributes
-        if (attributeExpressionExecutors.length != 3) {
-            throw new SiddhiAppCreationException("3 attributes are expected but " +
+        if (!(attributeExpressionExecutors.length >= 1 && attributeExpressionExecutors.length <= 3)) {
+            throw new SiddhiAppCreationException("1 - 3 attributes are expected but " +
                     attributeExpressionExecutors.length + " attributes are found inside the count function");
         }
 
         //expressionExecutors[1] --> relativeError
-        if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
-            throw new SiddhiAppCreationException("relative error has to be a constant but found " +
-                    this.attributeExpressionExecutors[1].getClass().getCanonicalName());
-        }
+        if (attributeExpressionExecutors.length > 1) {
 
-        if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
-            relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
-        } else {
-            throw new SiddhiAppCreationException("relative error should be of type Double but found " +
-                    attributeExpressionExecutors[1].getReturnType());
-        }
+            if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
+                throw new SiddhiAppCreationException("relative error has to be a constant but found " +
+                        this.attributeExpressionExecutors[1].getClass().getCanonicalName());
+            }
 
-        if ((relativeError <= 0) || (relativeError >= 1)) {
-            throw new SiddhiAppCreationException("relative error must be in the range of (0, 1)");
+            if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
+                relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
+            } else {
+                throw new SiddhiAppCreationException("relative error should be of type Double but found " +
+                        attributeExpressionExecutors[1].getReturnType());
+            }
+
+            if ((relativeError <= 0) || (relativeError >= 1)) {
+                throw new SiddhiAppCreationException("relative error must be in the range of (0, 1)");
+            }
         }
 
         //expressionExecutors[2] --> confidence
-        if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
-            throw new SiddhiAppCreationException("confidence has to be a constant but found " +
-                    this.attributeExpressionExecutors[2].getClass().getCanonicalName());
-        }
+        if (attributeExpressionExecutors.length > 2) {
 
-        if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
-            confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
-        } else {
-            throw new SiddhiAppCreationException("confidence should be of type Double but found " +
-                    attributeExpressionExecutors[2].getReturnType());
-        }
+            if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
+                throw new SiddhiAppCreationException("confidence has to be a constant but found " +
+                        this.attributeExpressionExecutors[2].getClass().getCanonicalName());
+            }
 
-        if ((confidence <= 0) || (confidence >= 1)) {
-            throw new SiddhiAppCreationException("confidence must be in the range of (0, 1)");
+            if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
+                confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
+            } else {
+                throw new SiddhiAppCreationException("confidence should be of type Double but found " +
+                        attributeExpressionExecutors[2].getReturnType());
+            }
+
+            if ((confidence <= 0) || (confidence >= 1)) {
+                throw new SiddhiAppCreationException("relative error must be in the range of (0, 1)");
+            }
         }
 
         countMinSketch = new CountMinSketch(relativeError, confidence);
 
         List<Attribute> attributeList = new ArrayList<>(3);
         attributeList.add(new Attribute("count", Attribute.Type.LONG));
-        attributeList.add(new Attribute("lower.bound", Attribute.Type.LONG));
-        attributeList.add(new Attribute("upper.bound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("lowerBound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("upperBound", Attribute.Type.LONG));
         return attributeList;
     }
 
@@ -177,20 +203,17 @@ public class CountExtension extends StreamProcessor {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
                 Object newData = attributeExpressionExecutors[0].execute(streamEvent);
-                long count = 0;
                 if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
-                    count = countMinSketch.insert(newData);
-                    noOfEvents++;
+                    approximateCount = countMinSketch.insert(newData);
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
-                    count = countMinSketch.remove(newData);
-                    noOfEvents--;
+                    approximateCount = countMinSketch.remove(newData);
                 }
-                Object[] outputData = {count, count, count + noOfEvents * relativeError};
+                Object[] outputData = {approximateCount[0], approximateCount[1], approximateCount[2]};
 
                 if (outputData == null) {
                     streamEventChunk.remove();
                 } else {
-//                    logger.debug("Populating output");
+                    logger.debug("Populating output");
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }
             }
@@ -213,8 +236,6 @@ public class CountExtension extends StreamProcessor {
         synchronized (this) {
             Map<String, Object> map = new HashMap();
             map.put("countMinSketch", countMinSketch);
-            map.put("relativeError", relativeError);
-            map.put("confidence", confidence);
             logger.debug("storing countMinSketch");
             return map;
         }
@@ -223,8 +244,6 @@ public class CountExtension extends StreamProcessor {
     @Override
     public void restoreState(Map<String, Object> map) {
         synchronized (this) {
-            relativeError = (Double) map.get("relativeError");
-            confidence = (Double) map.get("confidence");
             countMinSketch = (CountMinSketch) map.get("countMinSketch");
         }
     }
