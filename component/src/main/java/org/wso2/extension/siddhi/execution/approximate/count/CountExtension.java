@@ -45,13 +45,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * performs HyperLogLog algorithm to get approximate cardinality
+ * performs Count-Min Sketch algorithm to get approximate count(frequency) of events
  */
 @Extension(
         name = "count",
         namespace = "approximate",
         description = "Performs Count-min-sketch algorithm on a streaming data set based on a specific " +
-                "relative error and  a confidence value. ",
+                "relative error and  a confidence value to calculate the approximate count(frequency) of events.",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -62,12 +62,16 @@ import java.util.Map;
                 @Parameter(
                         name = "relative.error",
                         description = "this is the relative error for which the count is obtained",
-                        type = {DataType.DOUBLE}
+                        type = {DataType.DOUBLE},
+                        optional = true,
+                        defaultValue = "0.01"
                 ),
                 @Parameter(
                         name = "confidence",
                         description = "this is the confidence for which the relative error is true",
-                        type = {DataType.DOUBLE}
+                        type = {DataType.DOUBLE},
+                        optional = true,
+                        defaultValue = "0.9"
                 )
         },
         returnAttributes = {
@@ -88,6 +92,14 @@ import java.util.Map;
                 )
         },
         examples = {
+                @Example(
+                        syntax = "define stream InputStream (some_attribute int);" +
+                                "from InputStream#approximate:count(some_attribute, 0.01, 0.9)\n" +
+                                "select count\n" +
+                                "insert into OutputStream;",
+                        description = "count of events based on some_attribute is " +
+                                "calculated for a default relative error of 0.01 and a default confidence of 0.9"
+                ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
                                 "from InputStream#approximate:count(some_attribute, 0.01, 0.9)\n" +
