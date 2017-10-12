@@ -33,7 +33,7 @@ public class CountTestCase {
 
     @Test
     public void testApproximateCount_1() throws InterruptedException {
-        final double confidence = 0.9;
+        final double confidence = 0.99;
         final double relativeError = 0.01;
 
         LOG.info("Approximate Cardinality Test Case - default relative error(" + relativeError + ") " +
@@ -99,7 +99,7 @@ public class CountTestCase {
     public void testApproximateCount_2() throws InterruptedException {
 
         final double relativeError = 0.05;
-        final double confidence = 0.9;
+        final double confidence = 0.99;
 
         LOG.info("Approximate Cardinality Test Case - a specified relative error(" + relativeError + ") and  a default confidence("
                 + confidence + ")");

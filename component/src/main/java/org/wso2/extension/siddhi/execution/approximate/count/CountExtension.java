@@ -50,7 +50,8 @@ import java.util.Map;
         name = "count",
         namespace = "approximate",
         description = "Performs Count-min-sketch algorithm on a streaming data set based on a specific " +
-                "relative error and  a confidence value to calculate the approximate count(frequency) of events.",
+                "relative error and  a confidence value to calculate the approximate count(frequency) of events." +
+                "The default relative error is taken as 1%(0.01) and the default confidence is taken as 99%(0.99).",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -70,7 +71,7 @@ import java.util.Map;
                         description = "this is the confidence for which the relative error is true",
                         type = {DataType.DOUBLE},
                         optional = true,
-                        defaultValue = "0.9"
+                        defaultValue = "0.99"
                 )
         },
         returnAttributes = {
@@ -97,7 +98,7 @@ import java.util.Map;
                                 "select count\n" +
                                 "insert into OutputStream;",
                         description = "count of events based on some_attribute is " +
-                                "calculated for a default relative error of 0.01 and a default confidence of 0.9"
+                                "calculated for a default relative error of 0.01 and a default confidence of 0.99"
                 ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
@@ -105,23 +106,23 @@ import java.util.Map;
                                 "select count\n" +
                                 "insert into OutputStream;",
                         description = "count of events based on some_attribute is " +
-                                "calculated for an relative error of 0.05 and a default confidence of 0.9"
+                                "calculated for an relative error of 0.05 and a default confidence of 0.99"
                 ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
-                                "from InputStream#approximate:count(some_attribute, 0.05, 0.99)\n" +
+                                "from InputStream#approximate:count(some_attribute, 0.05, 0.9)\n" +
                                 "select count\n" +
                                 "insert into OutputStream;",
                         description = "count of events based on some_attribute is " +
-                                "calculated for an relative error of 0.05 and a confidence of 0.99"
+                                "calculated for an relative error of 0.05 and a confidence of 0.9"
                 ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
-                                "from InputStream#window.length(1000)#approximate:count(some_attribute, 0.05, 0.99)\n" +
+                                "from InputStream#window.length(1000)#approximate:count(some_attribute, 0.05, 0.9)\n" +
                                 "select count\n" +
                                 "insert into OutputStream;",
                         description = "count of events in a length window based on some_attribute is " +
-                                "calculated for an relative error of 0.05 and a confidence of 0.99"
+                                "calculated for an relative error of 0.05 and a confidence of 0.9"
                 ),
         }
 )
@@ -139,7 +140,7 @@ public class CountExtension extends StreamProcessor {
 
 //      default values for relative error and confidence
         double relativeError = 0.01;
-        double confidence = 0.9;
+        double confidence = 0.99;
 
 //       validate number of attributes
         if (!(attributeExpressionExecutors.length >= 1 && attributeExpressionExecutors.length <= 3)) {
