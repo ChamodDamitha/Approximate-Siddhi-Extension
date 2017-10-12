@@ -17,9 +17,6 @@
 */
 package org.wso2.extension.siddhi.execution.approximate.cardinality;
 
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
-
 /**
  * A probabilistic data structure to calculate cardinality of a set
  *
@@ -42,8 +39,6 @@ public class HyperLogLog<E> {
 
     private int[] countArray;
     private CountQueue[] pastCountsArray;
-
-    private HashFunction hashFunction;
 
     /**
      * Create a new HyperLogLog by specifying the relative error and confidence of answers
@@ -80,7 +75,6 @@ public class HyperLogLog<E> {
         harmonicCountSum = noOfBuckets;
         noOfZeroBuckets = noOfBuckets;
 
-        hashFunction = Hashing.murmur3_128(123);
     }
 
     /**
@@ -105,7 +99,7 @@ public class HyperLogLog<E> {
         if ((estimatedCardinality < 2.5 * noOfBuckets) && noOfZeroBuckets > 0) {
             cardinality = (long) (-noOfBuckets * Math.log((double) noOfZeroBuckets / noOfBuckets));
         } else if (estimatedCardinality > (pow2to32 / 30.0)) {
-            //       if E > 2 ^ (32) / 30 : return −2 ^ (32) * log(1 − E / 2 ^ (32))
+//      if E > 2 ^ (32) / 30 : return −2 ^ (32) * log(1 − E / 2 ^ (32))
             cardinality = (long) Math.ceil(-(pow2to32 * Math.log(1 - (estimatedCardinality / (pow2to32)))));
         } else {
             cardinality = estimatedCardinality;
@@ -121,8 +115,8 @@ public class HyperLogLog<E> {
     }
 
     /**
-     * Calculate the confidence interval for the current cardinality
-     *
+     * Calculate the confidence interval for the current cardinality.
+     * The confidence values can be one out of 0.65, 0.95, 0.99.
      * @return an long array which contain the lower bound and the upper bound of the confidence interval
      * e.g. - {313, 350} for the cardinality of 320
      */
