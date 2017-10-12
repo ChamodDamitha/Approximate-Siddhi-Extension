@@ -150,7 +150,6 @@ public class CardinalityTestCase {
         siddhiAppRuntime.shutdown();
     }
 
-
     @Test
     public void testApproximateCardinality_3() throws InterruptedException {
         final double relativeError = 0.05;

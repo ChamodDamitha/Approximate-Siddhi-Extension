@@ -139,7 +139,7 @@ public class HyperLogLog<E> {
     }
 
     /**
-     * Adds a new item to the array by hashing and setting the count of relevant buckets
+     * Adds a new item to the array by hashing and increasing the count of relevant buckets
      *
      * @param item
      */
@@ -152,24 +152,24 @@ public class HyperLogLog<E> {
 //      Shift all the bits to left till the bucket id is removed
         int remainingValue = hash << lengthOfBucketId;
 
-        int noOfLeadingZeros = Integer.numberOfLeadingZeros(remainingValue) + 1;
+        int newLeadingZeroCount = Integer.numberOfLeadingZeros(remainingValue) + 1;
 
 //      update the value in the  bucket
-        int currentZeroCount = countArray[bucketId];
-        pastCountsArray[bucketId].add(noOfLeadingZeros);
-        if (currentZeroCount < noOfLeadingZeros) {
+        int currentLeadingZeroCount = countArray[bucketId];
+        pastCountsArray[bucketId].add(newLeadingZeroCount);
+        if (currentLeadingZeroCount < newLeadingZeroCount) {
 
-            harmonicCountSum = harmonicCountSum - (1.0 / (1L << currentZeroCount))
-                    + (1.0 / (1L << noOfLeadingZeros));
+            harmonicCountSum = harmonicCountSum - (1.0 / (1L << currentLeadingZeroCount))
+                    + (1.0 / (1L << newLeadingZeroCount));
 
-            if (currentZeroCount == 0) {
+            if (currentLeadingZeroCount == 0) {
                 noOfZeroBuckets--;
             }
-            if (noOfLeadingZeros == 0) {
+            if (newLeadingZeroCount == 0) {
                 noOfZeroBuckets++;
             }
 
-            countArray[bucketId] = noOfLeadingZeros;
+            countArray[bucketId] = newLeadingZeroCount;
 
             calculateCardinality();
         }
