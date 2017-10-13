@@ -61,14 +61,16 @@ import java.util.Map;
                 ),
                 @Parameter(
                         name = "relative.error",
-                        description = "this is the relative error for which the count is obtained",
+                        description = "This is the relative error for which the count is obtained. " +
+                                "The values must be in the range of (0, 1).",
                         type = {DataType.DOUBLE},
                         optional = true,
                         defaultValue = "0.01"
                 ),
                 @Parameter(
                         name = "confidence",
-                        description = "this is the confidence for which the relative error is true",
+                        description = "This is the confidence for which the relative error is true. " +
+                                "The values must be in the range of (0, 1).",
                         type = {DataType.DOUBLE},
                         optional = true,
                         defaultValue = "0.99"
@@ -76,8 +78,8 @@ import java.util.Map;
         },
         returnAttributes = {
                 @ReturnAttribute(
-                        name = "count",
-                        description = "Represents the count of the event after the event arrived",
+                        name = "approximate.count",
+                        description = "Represents the approximate count of the event after the event arrived",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
