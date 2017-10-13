@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 import org.apache.log4j.Logger;
 import org.wso2.siddhi.annotation.Example;
@@ -25,7 +25,6 @@ import org.wso2.siddhi.annotation.Parameter;
 import org.wso2.siddhi.annotation.ReturnAttribute;
 import org.wso2.siddhi.annotation.util.DataType;
 import org.wso2.siddhi.core.config.SiddhiAppContext;
-import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.ComplexEventChunk;
 import org.wso2.siddhi.core.event.stream.StreamEvent;
 import org.wso2.siddhi.core.event.stream.StreamEventCloner;
@@ -47,17 +46,17 @@ import java.util.Map;
 //TODO : two extensions distinctCount, distinctCountEver
 
 /**
- * Performs HyperLogLog algorithm to get the approximate cardinality of events.
+ * Performs HyperLogLog algorithm to get the approximate distinctCount of events.
  */
 @Extension(
-        name = "distinctCount", //TODO : change cardinality to distinctCount
+        name = "distinctCount", //TODO : change distinctCount to distinctCount
         namespace = "approximate",
         description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
                 " and a confidence value to calculate the number of distinct events.", //TODO : reduce info - done
-        parameters = { //TODO : define cardinality - done
+        parameters = { //TODO : define distinctCount - done
                 @Parameter(
                         name = "value",
-                        description = "The value used to find cardinality",
+                        description = "The value used to find distinctCount",
                         type = {DataType.INT, DataType.DOUBLE, DataType.FLOAT, DataType.LONG, DataType.STRING,
                                 DataType.BOOL, DataType.TIME, DataType.OBJECT}
                 ),
@@ -105,11 +104,11 @@ import java.util.Map;
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.95. " +
                                 "Here the distinct count is the number of different values received for someAttribute. " +
                                 "The answers are 95% guaranteed to have a +-1% error."
-                ), //TODO : cardinality -> approximateCardinality, every output
+                ), //TODO : distinctCount -> approximateCardinality, every output
                 @Example(
                         syntax = "define stream InputStream (some_attribute string);\n" +
                                 "from InputStream#approximate:distinctCount(some_attribute, 0.05)\n" +
-                                "select cardinality\n" +
+                                "select distinctCount\n" +
                                 "insert into OutputStream;\n",
                         description = "Distinct count of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a default confidence of 0.95. " +
@@ -118,10 +117,10 @@ import java.util.Map;
                 ),
                 @Example(
                         syntax = "define stream InputStream (someAttribute double);\n" +
-                                "from InputStream#approximate:cardinality(someAttribute, 0.05, 0.65)\n" +
-                                "select cardinality\n" +
+                                "from InputStream#approximate:distinctCount(someAttribute, 0.05, 0.65)\n" +
+                                "select distinctCount\n" +
                                 "insert into OutputStream;\n",
-                        description = "cardinality of events in a stream based on someAttribute is " +
+                        description = "distinctCount of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a confidence of 0.65 ." +
                                 "Here the distinct count is the number of different values received for someAttribute. " +
                                 "The answers are 65% guaranteed to have a +-5% error."
@@ -131,8 +130,8 @@ import java.util.Map;
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);\n" +
                                 "from InputStream#window.length(1000)\n" +
-                                "#approximate:cardinality(someAttribute, 0.05, 0.65)\n" +
-                                "select cardinality\n" +
+                                "#approximate:distinctCount(someAttribute, 0.05, 0.65)\n" +
+                                "select distinctCount\n" +
                                 "insert into OutputStream;\n",
                         description = "Distinct count of events in a length window based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a confidence of 0.65. " +
@@ -143,8 +142,8 @@ import java.util.Map;
                 ),
         }
 )
-public class CardinalityExtension extends StreamProcessor {
-    private static final Logger logger = Logger.getLogger(CardinalityExtension.class.getName());
+public class DistinctCountExtension extends StreamProcessor {
+    private static final Logger logger = Logger.getLogger(DistinctCountExtension.class.getName());
     private HyperLogLog<Object> hyperLogLog;
 
     private ExpressionExecutor valueExecutor;
@@ -161,7 +160,7 @@ public class CardinalityExtension extends StreamProcessor {
 //       validate number of attributes
         if (!(attributeExpressionExecutors.length >= 1 && attributeExpressionExecutors.length <= 3)) {
             throw new SiddhiAppCreationException("1 - 3 attributes are expected but " +
-                    attributeExpressionExecutors.length + " attributes are found inside the cardinality function");
+                    attributeExpressionExecutors.length + " attributes are found inside the distinctCount function");
         }
 
         //expressionExecutors[1] --> relativeError
@@ -210,7 +209,7 @@ public class CardinalityExtension extends StreamProcessor {
         }
 
         valueExecutor = attributeExpressionExecutors[0];
-        hyperLogLog = new HyperLogLog<>(relativeError, confidence);
+        hyperLogLog = new HyperLogLog<>(relativeError, confidence, true);
 
         List<Attribute> attributeList = new ArrayList<>(3);
         attributeList.add(new Attribute("distinctCount", Attribute.Type.LONG)); //TODO : change names - done
@@ -237,7 +236,7 @@ public class CardinalityExtension extends StreamProcessor {
                         hyperLogLog.clear();
                     }
 
-//                  outputData = {cardinality, lower bound, upper bound}
+//                  outputData = {distinctCount, lower bound, upper bound}
                     Object[] outputData = {hyperLogLog.getCardinality(), hyperLogLog.getConfidenceInterval()[0],
                             hyperLogLog.getConfidenceInterval()[1]};
 

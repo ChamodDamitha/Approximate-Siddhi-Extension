@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * performs HyperLogLog algorithm to get approximate cardinality
+ * performs HyperLogLog algorithm to get approximate distinctCount
  */
 @Extension(
         name = "count",

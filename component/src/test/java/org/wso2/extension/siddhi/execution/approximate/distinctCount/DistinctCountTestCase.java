@@ -1,4 +1,4 @@
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 
 import org.apache.log4j.Logger;
@@ -10,10 +10,9 @@ import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.stream.input.InputHandler;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
-import org.wso2.siddhi.core.util.EventPrinter;
 
-public class CardinalityTestCase {
-    static final Logger LOG = Logger.getLogger(CardinalityTestCase.class);
+public class DistinctCountTestCase {
+    static final Logger LOG = Logger.getLogger(DistinctCountTestCase.class);
     private volatile int totalCount;
     private volatile int validCount;
     private final int noOfEvents = 1000;
@@ -99,7 +98,7 @@ public class CardinalityTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#approximate:cardinality(number, " + relativeError + ") " +
+                "from inputStream#approximate:distinctCount(number, " + relativeError + ") " +
                 "select * " +
                 "insert into outputStream;");
 
@@ -161,7 +160,7 @@ public class CardinalityTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#approximate:cardinality(number, " + relativeError + ", " + confidence + ") " +
+                "from inputStream#approximate:distinctCount(number, " + relativeError + ", " + confidence + ") " +
                 "select * " +
                 "insert into outputStream;");
 
@@ -227,7 +226,7 @@ public class CardinalityTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(" + windowLength + ")#approximate:cardinality(number) " +
+                "from inputStream#window.length(" + windowLength + ")#approximate:distinctCount(number) " +
                 "select * " +
                 "insert into outputStream;");
 

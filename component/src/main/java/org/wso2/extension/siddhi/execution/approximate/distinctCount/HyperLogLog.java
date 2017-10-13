@@ -15,18 +15,22 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 import java.io.Serializable;
 
 /**
- * A probabilistic data structure to calculate the cardinality of a set.
- * The referred research paper - http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf //TODO : name of the paper ,author
+ * A probabilistic data structure to calculate the distinctCount of a set.
+ * The referred research paper - HyperLogLog: the analysis of a near-optimal distinctCount estimation algorithm
+ * by Philippe Flajolet, Éric Fusy, Olivier Gandouet and Frédéric Meunier.
+ * http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf //TODO : name of the paper ,author - done
  * @param <E> is the type of objects in the set.
  */
 public class HyperLogLog<E> implements Serializable{
-    private final double standardError = 1.04; //TODO : capital constansts
-    private final double pow2of32 = Math.pow(2, 32);
+    private final double STANDARD_ERROR = 1.04; //TODO : capital constants - done
+    private final double POW_2_OF_32 = Math.pow(2, 32);
+
+    private boolean pastCountsEnabled;
 
     private int noOfBuckets;
     private int lengthOfBucketId;
@@ -40,7 +44,7 @@ public class HyperLogLog<E> implements Serializable{
     private long currentCardinality;
 
     private int[] countArray;
-    private CountList[] pastCountsArray;
+    private CountList[] pastCountsArray = null;
 
     /**
      * Create a new HyperLogLog by specifying the relative error and confidence of answers
@@ -49,13 +53,15 @@ public class HyperLogLog<E> implements Serializable{
      *
      * @param relativeError is a number in the range (0, 1)
      * @param confidence is a value out of 0.65, 0.95, 0.99
+     * @param pastCountsEnabled is a boolean value to mention whether to keep track of past counts or not.
      */
-    public HyperLogLog(double relativeError, double confidence) {
+    public HyperLogLog(double relativeError, double confidence, boolean pastCountsEnabled) {
         this.relativeError = relativeError;
         this.confidence = confidence;
+        this.pastCountsEnabled = pastCountsEnabled;
 
-//      relativeError = standardError / sqrt(noOfBuckets) = > noOfBuckets = (standardError / relativeError) ^ 2
-        noOfBuckets = (int) Math.ceil(Math.pow(standardError / relativeError, 2));
+//      relativeError = STANDARD_ERROR / sqrt(noOfBuckets) = > noOfBuckets = (STANDARD_ERROR / relativeError) ^ 2
+        noOfBuckets = (int) Math.ceil(Math.pow(STANDARD_ERROR / relativeError, 2));
 
 //      noOfBuckets = 2 ^ lengthOfBucketId = >  lengthOfBucketId = log2(noOfBuckets) = ln(noOfBuckets) / ln(2)
         lengthOfBucketId = (int) Math.ceil(Math.log(noOfBuckets) / Math.log(2));
@@ -69,12 +75,14 @@ public class HyperLogLog<E> implements Serializable{
                     " cannot be achieved");
         }
 
-        countArray = new int[noOfBuckets]; //TODO : if enabled
-        pastCountsArray = new CountList[noOfBuckets];
-        for (int i = 0; i < noOfBuckets; i++) {
-            pastCountsArray[i] = new CountList();
+        countArray = new int[noOfBuckets];
+        //TODO : if enabled - done
+        if (pastCountsEnabled) {
+            pastCountsArray = new CountList[noOfBuckets];
+            for (int i = 0; i < noOfBuckets; i++) {
+                pastCountsArray[i] = new CountList();
+            }
         }
-
         estimationFactor = getEstimationFactor(lengthOfBucketId, noOfBuckets);
 
         harmonicCountSum = noOfBuckets;
@@ -83,7 +91,7 @@ public class HyperLogLog<E> implements Serializable{
     }
 
     /**
-     * Calculate the cardinality(number of unique items in a set)
+     * Calculate the distinctCount(number of unique items in a set)
      * by calculating the harmonic mean of the counts in the buckets.
      * Check for the upper and lower bounds to modify the estimation.
      *
@@ -92,7 +100,7 @@ public class HyperLogLog<E> implements Serializable{
      *
      * harmonic count mean = n / ((1/2)^c1 + (1/2)^c2 + ... + (1/2)^cn)
      *
-     * estimated cardinality = n * estimationFactor * harmonicCountMean
+     * estimated distinctCount = n * estimationFactor * harmonicCountMean
      */
     private void calculateCardinality() {
 
@@ -102,7 +110,7 @@ public class HyperLogLog<E> implements Serializable{
 
         harmonicCountMean = noOfBuckets / harmonicCountSum;
 
-//      calculate the estimated cardinality
+//      calculate the estimated distinctCount
         estimatedCardinality = (long) Math.ceil(noOfBuckets * estimationFactor * harmonicCountMean);
 
 //      if the estimate E is less than 2.5 * 32 and there are buckets with max-leading-zero count of zero,
@@ -110,9 +118,9 @@ public class HyperLogLog<E> implements Serializable{
 //      threshold of 2.5x comes from the recommended load factor
         if ((estimatedCardinality < 2.5 * noOfBuckets) && noOfZeroBuckets > 0) {
             cardinality = (long) (-noOfBuckets * Math.log((double) noOfZeroBuckets / noOfBuckets));
-        } else if (estimatedCardinality > (pow2of32 / 30.0)) {
+        } else if (estimatedCardinality > (POW_2_OF_32 / 30.0)) {
 //      if E > 2 ^ (32) / 30 : return −2 ^ (32) * log(1 − E / 2 ^ (32))
-            cardinality = (long) Math.ceil(-(pow2of32 * Math.log(1 - (estimatedCardinality / (pow2of32)))));
+            cardinality = (long) Math.ceil(-(POW_2_OF_32 * Math.log(1 - (estimatedCardinality / (POW_2_OF_32)))));
         } else {
             cardinality = estimatedCardinality;
         }
@@ -120,17 +128,17 @@ public class HyperLogLog<E> implements Serializable{
     }
 
     /**
-     * @return the current cardinality value
+     * @return the current distinctCount value
      */
     public long getCardinality() {
         return this.currentCardinality;
     }
 
     /**
-     * Calculate the confidence interval for the current cardinality.
+     * Calculate the confidence interval for the current distinctCount.
      * The confidence values can be one value out of 0.65, 0.95, 0.99.
      * @return an long array which contain the lower bound and the upper bound of the confidence interval
-     * e.g. - {310, 350} for the cardinality of 330
+     * e.g. - {310, 350} for the distinctCount of 330
      */
     public long[] getConfidenceInterval() {
         long[] confidenceInterval = new long[2];
@@ -169,7 +177,10 @@ public class HyperLogLog<E> implements Serializable{
 
 //      update the value in the  bucket
         int currentLeadingZeroCount = countArray[bucketId];
-        pastCountsArray[bucketId].add(newLeadingZeroCount);
+        //TODO : if enabled - done
+        if (pastCountsEnabled) {
+            pastCountsArray[bucketId].add(newLeadingZeroCount);
+        }
         if (currentLeadingZeroCount < newLeadingZeroCount) {
 
             harmonicCountSum = harmonicCountSum - (1.0 / (1L << currentLeadingZeroCount))
@@ -189,41 +200,45 @@ public class HyperLogLog<E> implements Serializable{
     }
 
     /**
-     * Removes the given item from the array and restore the cardinality value by using the previous count.
+     * Removes the given item from the array and restore the distinctCount value by using the previous count.
      *
      * @param item
      */
-    public void removeItem(E item) { //ToDO
-        int hash = getHashValue(item);
+    public void removeItem(E item) {//      ToDO : if enabled - done
+        if (pastCountsEnabled) {
+            int hash = getHashValue(item);
 
 //      Shift all the bits to right till only the bucket ID is left
-        int bucketId = hash >>> (Integer.SIZE - lengthOfBucketId);
+            int bucketId = hash >>> (Integer.SIZE - lengthOfBucketId);
 
 //      Shift all the bits to left till the bucket id is removed
-        int remainingValue = hash << lengthOfBucketId;
+            int remainingValue = hash << lengthOfBucketId;
 
-        int currentLeadingZeroCount = Integer.numberOfLeadingZeros(remainingValue) + 1;
+            int currentLeadingZeroCount = Integer.numberOfLeadingZeros(remainingValue) + 1;
 
-        int newLeadingZeroCount = pastCountsArray[bucketId].remove(currentLeadingZeroCount);
-        int oldLeadingZeroCount = countArray[bucketId];
+            int newLeadingZeroCount = pastCountsArray[bucketId].remove(currentLeadingZeroCount);
+            int oldLeadingZeroCount = countArray[bucketId];
 
 //      check the next maximum leading zero count
-        if (newLeadingZeroCount >= 0) {
+            if (newLeadingZeroCount >= 0) {
 
-            harmonicCountSum = harmonicCountSum - (1.0 / (1L << oldLeadingZeroCount))
-                    + (1.0 / (1L << newLeadingZeroCount));
-            if (oldLeadingZeroCount == 0) {
-                noOfZeroBuckets--;
+                harmonicCountSum = harmonicCountSum - (1.0 / (1L << oldLeadingZeroCount))
+                        + (1.0 / (1L << newLeadingZeroCount));
+                if (oldLeadingZeroCount == 0) {
+                    noOfZeroBuckets--;
+                }
+                if (newLeadingZeroCount == 0) {
+                    noOfZeroBuckets++;
+                }
+
+                countArray[bucketId] = newLeadingZeroCount;
+
+                calculateCardinality();
             }
-            if (newLeadingZeroCount == 0) {
-                noOfZeroBuckets++;
-            }
-
-            countArray[bucketId] = newLeadingZeroCount;
-
-            calculateCardinality();
+        } else {
+            throw new IllegalAccessError(this.getClass().getCanonicalName() +
+                    " : Remove operation is called while the 'pastCountsEnabled' is false");
         }
-
     }
 
     /**
@@ -237,11 +252,12 @@ public class HyperLogLog<E> implements Serializable{
     }
 
     /**
-     * Calculate the {@code estimationFactor} based on the length of bucket id and number of buckets
+     * Calculate the {@code estimationFactor} based on the length of bucket id and number of buckets.
+     * The used constants are proven values from the research paper.
      *
      * @param lengthOfBucketId is the length of bucket id
      * @param noOfBuckets      is the number of buckets
-     * @return {@code estimationFactor} //TODO : proven values from research paper
+     * @return {@code estimationFactor} //TODO : proven values from research paper - done
      */
     private double getEstimationFactor(int lengthOfBucketId, int noOfBuckets) {
         switch (lengthOfBucketId) {
@@ -261,12 +277,13 @@ public class HyperLogLog<E> implements Serializable{
      */
     public void clear() {
         countArray = new int[noOfBuckets];
-        //TODO : if enabled
-        pastCountsArray = new CountList[noOfBuckets];
-        for (int i = 0; i < noOfBuckets; i++) {
-            pastCountsArray[i] = new CountList();
+        //TODO : if enabled - done
+        if (pastCountsEnabled) {
+            pastCountsArray = new CountList[noOfBuckets];
+            for (int i = 0; i < noOfBuckets; i++) {
+                pastCountsArray[i] = new CountList();
+            }
         }
-
         harmonicCountSum = noOfBuckets;
         noOfZeroBuckets = noOfBuckets;
     }

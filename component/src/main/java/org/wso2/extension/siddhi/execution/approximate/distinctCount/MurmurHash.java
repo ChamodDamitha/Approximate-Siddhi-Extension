@@ -16,7 +16,7 @@
 * under the License.
 */
 //TODO : include refered library license
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 import java.io.Serializable;
 

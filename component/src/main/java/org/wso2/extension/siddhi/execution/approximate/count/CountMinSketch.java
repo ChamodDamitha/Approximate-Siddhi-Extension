@@ -17,7 +17,7 @@
 */
 package org.wso2.extension.siddhi.execution.approximate.count;
 
-import org.wso2.extension.siddhi.execution.approximate.cardinality.MurmurHash;
+import org.wso2.extension.siddhi.execution.approximate.distinctCount.MurmurHash;
 
 import java.io.Serializable;
 import java.util.Random;

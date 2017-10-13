@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.extension.siddhi.execution.approximate.cardinality;
+package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 import java.io.Serializable;
 import java.util.ArrayList;
