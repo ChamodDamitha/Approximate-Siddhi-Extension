@@ -93,7 +93,7 @@ import java.util.Map;
                         type = {DataType.LONG}
                 )
         },
-        examples = {
+        examples = { //TODO : examples with windows only and warning , two types of windows
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
                                 "from InputStream#approximate:count(some_attribute)\n" +
@@ -133,7 +133,7 @@ public class CountExtension extends StreamProcessor {
 
     private CountMinSketch countMinSketch;
 
-    long[] approximateCount = new long[3];
+    private long[] approximateCount = new long[3];
 
     @Override
     protected List<Attribute> init(AbstractDefinition inputDefinition,
@@ -205,20 +205,20 @@ public class CountExtension extends StreamProcessor {
         synchronized (this) {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
-                Object newData = attributeExpressionExecutors[0].execute(streamEvent);
+                Object newData = attributeExpressionExecutors[0].execute(streamEvent); //TODO : check null
                 if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
-                    approximateCount = countMinSketch.insert(newData);
+                    approximateCount = countMinSketch.insert(newData); //TODO : object for E
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
                     approximateCount = countMinSketch.remove(newData);
-                }
+                } //TODO : rest event -> clear everything
 
 //              outputData = {count, lower bound, upper bound}
-                Object[] outputData = {approximateCount[0], approximateCount[1], approximateCount[2]};
+                Object[] outputData = {approximateCount[0], approximateCount[1], approximateCount[2]}; // TODO : two methods to count and bounds
 
                 if (outputData == null) {
-                    streamEventChunk.remove();
+                    streamEventChunk.remove(); //TODO : remove if check ,
                 } else {
-                    logger.debug("Populating output");
+                    logger.debug("Populating output");//tODO : remove
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }
             }

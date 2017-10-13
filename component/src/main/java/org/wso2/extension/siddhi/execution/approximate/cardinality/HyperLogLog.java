@@ -20,13 +20,13 @@ package org.wso2.extension.siddhi.execution.approximate.cardinality;
 import java.io.Serializable;
 
 /**
- * A probabilistic data structure to calculate cardinality of a set.
- * The referred research paper - http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
+ * A probabilistic data structure to calculate the cardinality of a set.
+ * The referred research paper - http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf //TODO : name of the paper ,author
  * @param <E> is the type of objects in the set.
  */
 public class HyperLogLog<E> implements Serializable{
-    private final double standardError = 1.04;
-    private final double pow2to32 = Math.pow(2, 32);
+    private final double standardError = 1.04; //TODO : capital constansts
+    private final double pow2of32 = Math.pow(2, 32);
 
     private int noOfBuckets;
     private int lengthOfBucketId;
@@ -44,8 +44,8 @@ public class HyperLogLog<E> implements Serializable{
 
     /**
      * Create a new HyperLogLog by specifying the relative error and confidence of answers
-     * being within the error margin
-     * Based on the relative error the array size is calculated
+     * being within the error margin.
+     * Based on the relative error the array size is calculated.
      *
      * @param relativeError is a number in the range (0, 1)
      * @param confidence is a value out of 0.65, 0.95, 0.99
@@ -62,12 +62,14 @@ public class HyperLogLog<E> implements Serializable{
 
         noOfBuckets = (1 << lengthOfBucketId);
 
+//      HyperLogLog estimations valid only when at least 16 buckets are used.
+//      Therefore the minimum length of bucket id = 4
         if (lengthOfBucketId < 4) {
             throw new IllegalArgumentException("a higher relative error of " + relativeError +
                     " cannot be achieved");
         }
 
-        countArray = new int[noOfBuckets];
+        countArray = new int[noOfBuckets]; //TODO : if enabled
         pastCountsArray = new CountList[noOfBuckets];
         for (int i = 0; i < noOfBuckets; i++) {
             pastCountsArray[i] = new CountList();
@@ -108,9 +110,9 @@ public class HyperLogLog<E> implements Serializable{
 //      threshold of 2.5x comes from the recommended load factor
         if ((estimatedCardinality < 2.5 * noOfBuckets) && noOfZeroBuckets > 0) {
             cardinality = (long) (-noOfBuckets * Math.log((double) noOfZeroBuckets / noOfBuckets));
-        } else if (estimatedCardinality > (pow2to32 / 30.0)) {
+        } else if (estimatedCardinality > (pow2of32 / 30.0)) {
 //      if E > 2 ^ (32) / 30 : return −2 ^ (32) * log(1 − E / 2 ^ (32))
-            cardinality = (long) Math.ceil(-(pow2to32 * Math.log(1 - (estimatedCardinality / (pow2to32)))));
+            cardinality = (long) Math.ceil(-(pow2of32 * Math.log(1 - (estimatedCardinality / (pow2of32)))));
         } else {
             cardinality = estimatedCardinality;
         }
@@ -191,7 +193,7 @@ public class HyperLogLog<E> implements Serializable{
      *
      * @param item
      */
-    public void removeItem(E item) {
+    public void removeItem(E item) { //ToDO
         int hash = getHashValue(item);
 
 //      Shift all the bits to right till only the bucket ID is left
@@ -239,7 +241,7 @@ public class HyperLogLog<E> implements Serializable{
      *
      * @param lengthOfBucketId is the length of bucket id
      * @param noOfBuckets      is the number of buckets
-     * @return {@code estimationFactor}
+     * @return {@code estimationFactor} //TODO : proven values from research paper
      */
     private double getEstimationFactor(int lengthOfBucketId, int noOfBuckets) {
         switch (lengthOfBucketId) {
@@ -256,7 +258,7 @@ public class HyperLogLog<E> implements Serializable{
 
     public double getRelativeError() {
         return relativeError;
-    }
+    } //TODO : remove unused
 
     public double getConfidence() { return confidence; }
 }

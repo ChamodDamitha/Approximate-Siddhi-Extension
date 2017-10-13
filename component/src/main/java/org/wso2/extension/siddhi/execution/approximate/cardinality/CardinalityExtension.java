@@ -43,16 +43,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+//TODO : two extensions distinctCount, distinctCountEver
+
 /**
  * Performs HyperLogLog algorithm to get the approximate cardinality of events.
  */
 @Extension(
-        name = "cardinality",
+        name = "cardinality", //TODO : change cardinality to distinctCount
         namespace = "approximate",
         description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
                 " and a confidence value to calculate the unique count of the events(cardinality). " +
-                "The default relative error is set as 1%(0.01) and the default confidence as 95%(0.95).",
-        parameters = {
+                "The default relative error is set as 1%(0.01) and the default confidence as 95%(0.95).", //TODO : reduce info
+        parameters = { //TODO : define cardinality
                 @Parameter(
                         name = "value",
                         description = "The value used to find cardinality",
@@ -78,30 +80,30 @@ import java.util.Map;
         },
         returnAttributes = {
                 @ReturnAttribute(
-                        name = "approximate.cardinality",
-                        description = "Represents the approximate cardinality after the event arrived",
+                        name = "approximateCardinality",
+                        description = "Represents the approximate cardinality considering the last event ",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
-                        name = "lowerBound",
+                        name = "cardinalityLowerBound",
                         description = "Represents the lower bound of the cardinality after the event arrived",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
-                        name = "upperBound",
+                        name = "cardinalityUpperBound",
                         description = "Represents the upper bound of the cardinality after the event arrived",
                         type = {DataType.LONG}
                 )
         },
         examples = {
                 @Example(
-                        syntax = "define stream InputStream (some_attribute int);" +
+                        syntax = "define stream InputStream (someAttribute int);" + //TODO : \n after every line, camel case
                                 "from InputStream#approximate:cardinality(some_attribute)\n" +
                                 "select cardinality\n" +
                                 "insert into OutputStream;",
-                        description = "cardinality of events in a stream based on some_attribute is " +
+                        description = "Cardinality of events in a stream based on some_attribute is " +
                                 "calculated for a default relative error of 0.01 and  a default confidence of 0.95"
-                ),
+                ), //TODO : cardinality -> approximateCardinality, every output
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
                                 "from InputStream#approximate:cardinality(some_attribute, 0.05)\n" +
@@ -116,7 +118,7 @@ import java.util.Map;
                                 "select cardinality\n" +
                                 "insert into OutputStream;",
                         description = "cardinality of events in a stream based on some_attribute is " +
-                                "calculated for a relative error of 0.05 and a confidence of 0.65"
+                                "calculated for a relative error of 0.05 and a confidence of 0.65" //TODO : remove example
                 ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);" +
@@ -126,12 +128,13 @@ import java.util.Map;
                                 "insert into OutputStream;",
                         description = "cardinality of events in a length window based on some_attribute is " +
                                 "calculated for a relative error of 0.05 and a confidence of 0.65"
+                        //TODO : explain more
                 ),
         }
 )
 public class CardinalityExtension extends StreamProcessor {
     private static final Logger logger = Logger.getLogger(CardinalityExtension.class.getName());
-    private HyperLogLog hyperLogLog;
+    private HyperLogLog<Object> hyperLogLog;
 
     @Override
     protected List<Attribute> init(AbstractDefinition inputDefinition,
@@ -153,7 +156,7 @@ public class CardinalityExtension extends StreamProcessor {
 
             if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
                 throw new SiddhiAppCreationException("relative error has to be a constant but found " +
-                        this.attributeExpressionExecutors[1].getClass().getCanonicalName());
+                        this.attributeExpressionExecutors[1].getClass().getCanonicalName()); //TODO : 2nd param 'relative.error'
             }
 
             if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
@@ -164,7 +167,7 @@ public class CardinalityExtension extends StreamProcessor {
             }
 
             if ((relativeError <= 0) || (relativeError >= 1)) {
-                throw new SiddhiAppCreationException("relative error must be in the range of (0, 1)");
+                throw new SiddhiAppCreationException("relative error must be in the range of (0, 1)"); //TODO : print passed value
             }
         }
 
@@ -187,10 +190,10 @@ public class CardinalityExtension extends StreamProcessor {
             }
         }
 
-        hyperLogLog = new HyperLogLog(relativeError, confidence);
+        hyperLogLog = new HyperLogLog<Object>(relativeError, confidence);
 
         List<Attribute> attributeList = new ArrayList<>(3);
-        attributeList.add(new Attribute("cardinality", Attribute.Type.LONG));
+        attributeList.add(new Attribute("cardinality", Attribute.Type.LONG)); //TODO : change names
         attributeList.add(new Attribute("lowerBound", Attribute.Type.LONG));
         attributeList.add(new Attribute("upperBound", Attribute.Type.LONG));
         return attributeList;
@@ -202,7 +205,7 @@ public class CardinalityExtension extends StreamProcessor {
         synchronized (this) {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
-                Object newData = attributeExpressionExecutors[0].execute(streamEvent);
+                Object newData = attributeExpressionExecutors[0].execute(streamEvent); //TODO : assign attributeExpressionExecutors[0] to a var
                 if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
                     hyperLogLog.addItem(newData);
 
@@ -217,7 +220,7 @@ public class CardinalityExtension extends StreamProcessor {
                 if (outputData == null) {
                     streamEventChunk.remove();
                 } else {
-                    logger.debug("Populating output");
+                    logger.debug("Populating output"); //TODO : remove debugs and logs
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }
             }
@@ -240,7 +243,7 @@ public class CardinalityExtension extends StreamProcessor {
         synchronized (this) {
             Map<String, Object> map = new HashMap();
             map.put("hyperLogLog", hyperLogLog);
-            logger.debug("storing hyperLogLog");
+            logger.debug("storing hyperLogLog"); //TODO : remove
             return map;
         }
     }
