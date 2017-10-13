@@ -37,7 +37,7 @@ public class CardinalityTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#approximate:cardinality(number) " +
+                "from inputStream#approximate:distinctCount(number) " +
                 "select * " +
                 "insert into outputStream;");
 

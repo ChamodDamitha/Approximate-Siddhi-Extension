@@ -256,11 +256,20 @@ public class HyperLogLog<E> implements Serializable{
         }
     }
 
-    public double getRelativeError() {
-        return relativeError;
-    } //TODO : remove unused
+    /**
+     * Clears all the counts stored in the data structure.
+     */
+    public void clear() {
+        countArray = new int[noOfBuckets];
+        //TODO : if enabled
+        pastCountsArray = new CountList[noOfBuckets];
+        for (int i = 0; i < noOfBuckets; i++) {
+            pastCountsArray[i] = new CountList();
+        }
 
-    public double getConfidence() { return confidence; }
+        harmonicCountSum = noOfBuckets;
+        noOfZeroBuckets = noOfBuckets;
+    }
 }
 
 
