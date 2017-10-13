@@ -20,8 +20,8 @@ package org.wso2.extension.siddhi.execution.approximate.cardinality;
 import java.io.Serializable;
 
 /**
- * A probabilistic data structure to calculate cardinality of a set
- *
+ * A probabilistic data structure to calculate cardinality of a set.
+ * The referred research paper - http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
  * @param <E> is the type of objects in the set.
  */
 public class HyperLogLog<E> implements Serializable{
@@ -105,7 +105,7 @@ public class HyperLogLog<E> implements Serializable{
 
 //      if the estimate E is less than 2.5 * 32 and there are buckets with max-leading-zero count of zero,
 //      then instead return −32⋅log(V/32), where V is the number of buckets with max-leading-zero count = 0.
-//      threshold of 2.5x comes from the recommended load factor for Linear Counting
+//      threshold of 2.5x comes from the recommended load factor
         if ((estimatedCardinality < 2.5 * noOfBuckets) && noOfZeroBuckets > 0) {
             cardinality = (long) (-noOfBuckets * Math.log((double) noOfZeroBuckets / noOfBuckets));
         } else if (estimatedCardinality > (pow2to32 / 30.0)) {

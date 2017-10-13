@@ -44,14 +44,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * performs HyperLogLog algorithm to get approximate cardinality
+ * Performs HyperLogLog algorithm to get the approximate cardinality of events.
  */
 @Extension(
         name = "cardinality",
         namespace = "approximate",
         description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
                 " and a confidence value to calculate the unique count of the events(cardinality). " +
-                "The default relative error is kept as 1%(0.01) and the default confidence as 95%(0.95).",
+                "The default relative error is set as 1%(0.01) and the default confidence as 95%(0.95).",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -210,6 +210,7 @@ public class CardinalityExtension extends StreamProcessor {
                     hyperLogLog.removeItem(newData);
                 }
 
+//              outputData = {cardinality, lower bound, upper bound}
                 Object[] outputData = {hyperLogLog.getCardinality(), hyperLogLog.getConfidenceInterval()[0],
                         hyperLogLog.getConfidenceInterval()[1]};
 

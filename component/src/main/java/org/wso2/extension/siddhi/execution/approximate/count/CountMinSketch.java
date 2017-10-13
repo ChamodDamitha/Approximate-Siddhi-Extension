@@ -24,7 +24,7 @@ import java.util.Random;
 
 /**
  * A probabilistic data structure to keep count of different items.
- *
+ * The referred research paper - http://dimacs.rutgers.edu/%7Egraham/pubs/papers/cmencyc.pdf
  * @param <E> is the type of data to be counted
  */
 public class CountMinSketch<E> implements Serializable{

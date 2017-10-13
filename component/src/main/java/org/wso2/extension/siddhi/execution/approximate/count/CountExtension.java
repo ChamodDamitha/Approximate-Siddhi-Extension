@@ -44,14 +44,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * performs Count-Min Sketch algorithm to get approximate count(frequency) of events
+ * performs Count-Min Sketch algorithm to get the approximate count(frequency) of events.
  */
 @Extension(
         name = "count",
         namespace = "approximate",
         description = "Performs Count-min-sketch algorithm on a streaming data set based on a specific " +
                 "relative error and  a confidence value to calculate the approximate count(frequency) of events." +
-                "The default relative error is taken as 1%(0.01) and the default confidence is taken as 99%(0.99).",
+                "The default relative error is set as 1%(0.01) and the default confidence is taken as 99%(0.99).",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -211,6 +211,8 @@ public class CountExtension extends StreamProcessor {
                 } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
                     approximateCount = countMinSketch.remove(newData);
                 }
+
+//              outputData = {count, lower bound, upper bound}
                 Object[] outputData = {approximateCount[0], approximateCount[1], approximateCount[2]};
 
                 if (outputData == null) {
