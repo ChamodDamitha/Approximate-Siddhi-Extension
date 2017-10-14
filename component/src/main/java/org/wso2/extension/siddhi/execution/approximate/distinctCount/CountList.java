@@ -26,6 +26,8 @@ import java.util.ArrayList;
  */
 public class CountList implements Serializable{
 
+    private static final long serialVersionUID = -3455124336894867529L;
+
     ArrayList<Integer> counts;
 
     public CountList() {

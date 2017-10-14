@@ -29,6 +29,8 @@ import java.util.Random;
  */
 public class CountMinSketch<E> implements Serializable{
 
+    private static final long serialVersionUID = -7485124336894867529L;
+
     private int depth;
     private int width;
 
@@ -117,10 +119,9 @@ public class CountMinSketch<E> implements Serializable{
      * increment each value in the cell of relevant row and index (e.g. countArray[row][index]++)
      *
      * @param item
-     * @return a long array which contains the approximate count, lower bound and the upper bound
-     * of the confidence interval consecutively
+     * @return the approximate count of the item
      */
-    public long[] insert(E item) {
+    public long insert(E item) {
         totalNoOfItems++;
 
         int[] hashValues = getHashValues(item);
@@ -138,7 +139,7 @@ public class CountMinSketch<E> implements Serializable{
             }
         }
 
-        return getConfidenceInterval(currentMin + 1);
+        return currentMin + 1;
     }
 
     /**
@@ -148,10 +149,9 @@ public class CountMinSketch<E> implements Serializable{
      * decrement each value in the cell of relevant row and index (e.g. countArray[row][index]--)
      *
      * @param item
-     * @return a long array which contains the approximate count, lower bound and the upper bound
-     * of the confidence interval consecutively
+     * @return the approximate count of the item
      */
-    public long[] remove(E item) {
+    public long remove(E item) {
         totalNoOfItems--;
 
         int[] hashValues = getHashValues(item);
@@ -168,7 +168,7 @@ public class CountMinSketch<E> implements Serializable{
                 currentMin = currentVal;
             }
         }
-        return getConfidenceInterval(currentMin - 1);
+        return currentMin - 1;
     }
 
     /**
@@ -176,30 +176,29 @@ public class CountMinSketch<E> implements Serializable{
      * Check the relevant cell values for the given item by hashing it to cell indices.
      * Then take the minimum out of those values.
      * @param item to be counted
-     * @return a long array which contains the approximate count, lower bound and the upper bound
-     * of the confidence interval consecutively
+     * @return the approximate count of the item
      */
-    public long[] approximateCount(E item) {
-        int[] hashValues = getHashValues(item);
-        int index;
-
-        long minCount = Long.MAX_VALUE;
-        long tempCount;
-
-        for (int i = 0; i < depth; i++) {
-            index = getArrayIndex(hashValues[i]);
-            tempCount = countArray[i][index];
-            if (tempCount < minCount) {
-                minCount = tempCount;
-            }
-        }
-//      if item not found
-        if (minCount == Long.MAX_VALUE) {
-            return new long[]{0, 0, 0};
-        }
-//      if item is found
-        return getConfidenceInterval(minCount);
-    }
+//    public long approximateCount(E item) {
+//        int[] hashValues = getHashValues(item);
+//        int index;
+//
+//        long minCount = Long.MAX_VALUE;
+//        long tempCount;
+//
+//        for (int i = 0; i < depth; i++) {
+//            index = getArrayIndex(hashValues[i]);
+//            tempCount = countArray[i][index];
+//            if (tempCount < minCount) {
+//                minCount = tempCount;
+//            }
+//        }
+////      if item not found
+//        if (minCount == Long.MAX_VALUE) {
+//            return 0;
+//        }
+////      if item is found
+//        return minCount;
+//    }
 
 
     /**
@@ -207,33 +206,23 @@ public class CountMinSketch<E> implements Serializable{
      * approximateCount - (totalNoOfItems * relativeError) <= exactCount
      * <= approximateCount + (totalNoOfItems * relativeError)
      * @param count
-     * @return a long array which contains the count, the lower bound and
+     * @return a long array which contains the lower bound and
      * the upper bound of the confidence interval consecutively
      */
-    private long[] getConfidenceInterval(long count) {
+    public long[] getConfidenceInterval(long count) {
         if (count - (long) (totalNoOfItems * relativeError) > 0) {
-            return new long[]{count, count - (long) (totalNoOfItems * relativeError),
+            return new long[]{count - (long) (totalNoOfItems * relativeError),
                     (long) (count + (totalNoOfItems * relativeError))};
         } else {
-            return new long[]{count, 0, (long) (count + (totalNoOfItems * relativeError))};
+            return new long[]{0, (long) (count + (totalNoOfItems * relativeError))};
         }
     }
 
     /**
-     * Return the relativeError of the count min sketch
-     *
-     * @return
+     * Clears the counts within the sketch.
      */
-    public double getRelativeError() {
-        return relativeError;
-    }
-
-    /**
-     * Return the confidence of the count min sketch
-     *
-     * @return
-     */
-    public double getConfidence() {
-        return confidence;
+    public void clear() {
+        this.totalNoOfItems = 0;
+        this.countArray = new long[depth][width];
     }
 }

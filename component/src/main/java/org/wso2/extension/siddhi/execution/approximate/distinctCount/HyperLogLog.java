@@ -27,8 +27,11 @@ import java.io.Serializable;
  * @param <E> is the type of objects in the set.
  */
 public class HyperLogLog<E> implements Serializable{
-    private final double STANDARD_ERROR = 1.04; //TODO : capital constants - done
-    private final double POW_2_OF_32 = Math.pow(2, 32);
+
+    private static final long serialVersionUID = -1285124336894867529L;
+
+    private static final double STANDARD_ERROR = 1.04; //TODO : capital constants - done
+    private static final double POW_2_OF_32 = Math.pow(2, 32);
 
     private boolean pastCountsEnabled;
 
@@ -144,15 +147,15 @@ public class HyperLogLog<E> implements Serializable{
         long[] confidenceInterval = new long[2];
 
 //      sigma = relative error
-        if (confidence == 0.65) {//      65% sure the answer in the range of sigma
+        if (Math.abs(confidence - 0.65) < 0.0000001) {//      65% sure the answer in the range of sigma
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 0.5));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError * 0.5));
         }
-        else if (confidence == 0.95) {//      95% sure the answer in the range of (2 * sigma)
+        else if (Math.abs(confidence - 0.95) < 0.0000001) {//      95% sure the answer in the range of (2 * sigma)
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError));
         }
-        else if (confidence == 0.99) {//      99% sure the answer in the range of (3 * sigma)
+        else if (Math.abs(confidence - 0.99) < 0.0000001) {//      99% sure the answer in the range of (3 * sigma)
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 1.5));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError* 1.5));
         }

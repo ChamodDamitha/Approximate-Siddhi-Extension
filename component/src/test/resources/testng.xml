@@ -20,9 +20,11 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 
 <suite name="Execution-Approximate-Test-Suite">
-    <test name="execution-ml-tests" enabled="true" preserve-order="true">
+    <test name="execution-approximate-tests" enabled="true" preserve-order="true">
         <classes>
-            <!--<class name="org.wso2.extension.siddhi.execution.approximate.distinctCountnt.MurmurHash"/>-->
+            <class name="org.wso2.extension.siddhi.execution.approximate.distinctCount.DistinctCountTestCase"/>
+            <class name="org.wso2.extension.siddhi.execution.approximate.distinctCountEver.DistinctCountEverTestCase"/>
+            <class name="org.wso2.extension.siddhi.execution.approximate.count.CountTestCase"/>
         </classes>
     </test>
 </suite>

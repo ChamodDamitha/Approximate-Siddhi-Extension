@@ -19,11 +19,12 @@
 package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 
 /**
  * Calculate integer hash values for any type of object
  */
-public final class MurmurHash implements Serializable{
+public final class MurmurHash{
     private MurmurHash() {
     }
 
@@ -39,7 +40,7 @@ public final class MurmurHash implements Serializable{
         } else if (o instanceof Float) {
             return hashLong((long) Float.floatToRawIntBits(((Float) o).floatValue()));
         } else if (o instanceof String) {
-            return hash(((String) o).getBytes());
+            return hash(((String) o).getBytes(Charset.forName("UTF-8")));
         } else {
             return hash(o.toString());
         }

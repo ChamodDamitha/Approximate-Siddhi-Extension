@@ -46,7 +46,7 @@ import java.util.Map;
 //TODO : two extensions distinctCount, distinctCountEver
 
 /**
- * Performs HyperLogLog algorithm to get the approximate distinctCount of events.
+ * Performs HyperLogLog algorithm to get the approximate distinctCount of events in a window.
  */
 @Extension(
         name = "distinctCount", //TODO : change distinctCount to distinctCount
@@ -96,14 +96,15 @@ import java.util.Map;
         },
         examples = {
                 @Example(
-                        syntax = "define stream InputStream (someAttribute int);\n" + //TODO : \n after every line, camel case
+                        syntax = "define stream InputStream (someAttribute int);\n" +
+                                //TODO : \n after every line, camel case
                                 "from InputStream#approximate:distinctCount(someAttribute)\n" +
                                 "select distinctCount, distinctCountLowerBound, distinctCountUpperBound\n" +
                                 "insert into OutputStream;\n",
                         description = "Distinct count of events in a stream based on someAttribute is " +
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.95. " +
-                                "Here the distinct count is the number of different values received for someAttribute. " +
-                                "The answers are 95% guaranteed to have a +-1% error."
+                                "Here the distinct count is the number of different values received for " +
+                                "someAttribute. The answers are 95% guaranteed to have a +-1% error."
                 ), //TODO : distinctCount -> approximateCardinality, every output
                 @Example(
                         syntax = "define stream InputStream (some_attribute string);\n" +
@@ -112,8 +113,8 @@ import java.util.Map;
                                 "insert into OutputStream;\n",
                         description = "Distinct count of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a default confidence of 0.95. " +
-                                "Here the distinct count is the number of different values received for someAttribute. " +
-                                "The answers are 95% guaranteed to have a +-5% error."
+                                "Here the distinct count is the number of different values received for " +
+                                "someAttribute. The answers are 95% guaranteed to have a +-5% error."
                 ),
                 @Example(
                         syntax = "define stream InputStream (someAttribute double);\n" +
@@ -122,8 +123,8 @@ import java.util.Map;
                                 "insert into OutputStream;\n",
                         description = "distinctCount of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a confidence of 0.65 ." +
-                                "Here the distinct count is the number of different values received for someAttribute. " +
-                                "The answers are 65% guaranteed to have a +-5% error."
+                                "Here the distinct count is the number of different values received for " +
+                                "someAttribute. The answers are 65% guaranteed to have a +-5% error."
 
                         //TODO : remove example - done
                 ),
@@ -169,7 +170,8 @@ public class DistinctCountExtension extends StreamProcessor {
             if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
                 throw new SiddhiAppCreationException("The 2nd parameter inside distinctCount function " +
                         "- 'relative.error' has to be a constant but found " +
-                        this.attributeExpressionExecutors[1].getClass().getCanonicalName()); //TODO : 2nd param 'relative.error' - done
+                        this.attributeExpressionExecutors[1].getClass().getCanonicalName());
+                //TODO : 2nd param 'relative.error' - done
             }
 
             if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
@@ -182,14 +184,15 @@ public class DistinctCountExtension extends StreamProcessor {
 
             if ((relativeError <= 0) || (relativeError >= 1)) {
                 throw new SiddhiAppCreationException("The 2nd parameter inside distinctCount function" +
-                        " - 'relative.error' must be in the range of (0, 1) but found " + relativeError); //TODO : print passed value - done
+                        " - 'relative.error' must be in the range of (0, 1) but found " + relativeError);
+                //TODO : print passed value - done
             }
         }
 
         //expressionExecutors[2] --> confidence
         if (attributeExpressionExecutors.length > 2) {
             if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
-                throw new SiddhiAppCreationException("The 2nd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCount function - " +
                         "'confidence' has to be a constant but found " +
                         this.attributeExpressionExecutors[2].getClass().getCanonicalName());
             }
@@ -197,13 +200,14 @@ public class DistinctCountExtension extends StreamProcessor {
             if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
                 confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
             } else {
-                throw new SiddhiAppCreationException("The 2nd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCount function - " +
                         "'confidence' should be of type Double but found " +
                         attributeExpressionExecutors[2].getReturnType());
             }
 
-            if (confidence != 0.65 && confidence != 0.95 && confidence != 0.99) {
-                throw new SiddhiAppCreationException("he 2nd parameter inside distinctCount function - " +
+            if (Math.abs(confidence - 0.65) > 0.0000001 && Math.abs(confidence - 0.95) > 0.0000001
+                    && Math.abs(confidence - 0.99) > 0.0000001) {
+                throw new SiddhiAppCreationException("he 3rd parameter inside distinctCount function - " +
                         "'confidence' must be a value from 0.65, 0.95 and 0.99 but found " + confidence);
             }
         }
@@ -224,7 +228,8 @@ public class DistinctCountExtension extends StreamProcessor {
         synchronized (this) {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
-                Object newData = valueExecutor.execute(streamEvent); //TODO : assign attributeExpressionExecutors[0] to a var - done
+                Object newData = valueExecutor.execute(streamEvent);
+                //TODO : assign attributeExpressionExecutors[0] to a var - done
                 if (newData == null) {
                     streamEventChunk.remove();
                 } else {
