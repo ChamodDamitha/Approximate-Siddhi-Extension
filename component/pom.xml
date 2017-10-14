@@ -108,8 +108,7 @@
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
                             org.wso2.extension.siddhi.execution.approximate.distinctCount.*,
-                            org.wso2.extension.siddhi.execution.approximate.similarity.*,
-                            org.wso2.extension.siddhi.execution.approximate.percentile.*,
+                            org.wso2.extension.siddhi.execution.approximate.distinctCountEver.*,
                             org.wso2.extension.siddhi.execution.approximate.count
                         </Export-Package>
                         <Import-Package>

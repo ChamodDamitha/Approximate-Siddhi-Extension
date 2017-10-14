@@ -54,9 +54,9 @@
     </properties>
 
     <scm>
-        <connection>scm:git:https://github.com/wso2-extensions/siddhi-execution-streamingml.git</connection>
-        <url>https://github.com/wso2-extensions/siddhi-execution-streamingml.git</url>
-        <developerConnection>scm:git:https://github.com/wso2-extensions/siddhi-execution-streamingml.git
+        <connection>scm:git:https://github.com/ChamodDamitha/siddhi-execution-approximate.git</connection>
+        <url>https://github.com/ChamodDamitha/siddhi-execution-approximate.git</url>
+        <developerConnection>scm:git:https://github.com/ChamodDamitha/siddhi-execution-approximate.git
         </developerConnection>
         <tag>HEAD</tag>
     </scm>
