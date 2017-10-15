@@ -140,7 +140,7 @@ import java.util.Map;
                                 "for someAttribute in the last 1000 events. " +
                                 "The answers are 65% guaranteed to have a +-5% error."
                         //TODO : explain more - done
-                ),
+                )
         }
 )
 public class DistinctCountExtension extends StreamProcessor {

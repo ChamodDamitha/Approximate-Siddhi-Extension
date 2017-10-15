@@ -18,7 +18,6 @@ target
 *.project
 *.idea
 .DS_Store
-README.md
 
 # Ignore logs
 *.log
