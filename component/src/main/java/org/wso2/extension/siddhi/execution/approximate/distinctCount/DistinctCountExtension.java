@@ -51,7 +51,8 @@ import java.util.Map;
 @Extension(
         name = "distinctCount", //TODO : change distinctCount to distinctCount
         namespace = "approximate",
-        description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
+        description = "Performs HyperLogLog algorithm on a window of streaming data set based on a " +
+                "specific relative error" +
                 " and a confidence value to calculate the number of distinct events.", //TODO : reduce info - done
         parameters = { //TODO : define distinctCount - done
                 @Parameter(
