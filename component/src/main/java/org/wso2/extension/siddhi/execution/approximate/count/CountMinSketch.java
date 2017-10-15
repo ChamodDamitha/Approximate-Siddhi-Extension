@@ -172,36 +172,6 @@ public class CountMinSketch<E> implements Serializable{
     }
 
     /**
-     * Compute the approximate count for a given item.
-     * Check the relevant cell values for the given item by hashing it to cell indices.
-     * Then take the minimum out of those values.
-     * @param item to be counted
-     * @return the approximate count of the item
-     */
-//    public long approximateCount(E item) {
-//        int[] hashValues = getHashValues(item);
-//        int index;
-//
-//        long minCount = Long.MAX_VALUE;
-//        long tempCount;
-//
-//        for (int i = 0; i < depth; i++) {
-//            index = getArrayIndex(hashValues[i]);
-//            tempCount = countArray[i][index];
-//            if (tempCount < minCount) {
-//                minCount = tempCount;
-//            }
-//        }
-////      if item not found
-//        if (minCount == Long.MAX_VALUE) {
-//            return 0;
-//        }
-////      if item is found
-//        return minCount;
-//    }
-
-
-    /**
      * Calculate the confidence interval of the approximate count
      * approximateCount - (totalNoOfItems * relativeError) <= exactCount
      * <= approximateCount + (totalNoOfItems * relativeError)
