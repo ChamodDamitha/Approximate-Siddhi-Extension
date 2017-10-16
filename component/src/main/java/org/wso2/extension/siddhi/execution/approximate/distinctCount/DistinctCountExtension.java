@@ -186,7 +186,7 @@ public class DistinctCountExtension extends StreamProcessor {
 
             if (Math.abs(confidence - 0.65) > 0.0000001 && Math.abs(confidence - 0.95) > 0.0000001
                     && Math.abs(confidence - 0.99) > 0.0000001) {
-                throw new SiddhiAppCreationException("he 3rd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCount function - " +
                         "'confidence' must be a value from 0.65, 0.95 and 0.99 but found " + confidence);
             }
         }

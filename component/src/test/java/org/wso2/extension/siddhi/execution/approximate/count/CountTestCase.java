@@ -121,14 +121,18 @@ public class CountTestCase {
                 "select * " +
                 "insert into outputStream;");
 
+        boolean exceptionOccurred = false;
         try {
             SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
         } catch (Exception e) {
+            exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("1 - 3 attributes are expected but 0 attributes" +
                     " are found inside the count function"));
         }
+        Assert.assertEquals(true, exceptionOccurred);
     }
+
     @Test
     public void testApproximateCount_3() throws InterruptedException {
         final int windowLength = 1000;
@@ -144,15 +148,17 @@ public class CountTestCase {
                 "from inputStream#window.length(" + windowLength + ")#approximate:count(number, number) " +
                 "select * " +
                 "insert into outputStream;");
-
+        boolean exceptionOccurred = false;
         try {
             SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
         } catch (Exception e) {
+            exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 2nd parameter inside count function" +
                     " - 'relative.error' has to be a constant but found " +
                     "org.wso2.siddhi.core.executor.VariableExpressionExecutor"));
         }
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -170,14 +176,16 @@ public class CountTestCase {
                 "from inputStream#window.length(" + windowLength + ")#approximate:count(number, '0.01') " +
                 "select * " +
                 "insert into outputStream;");
-
+        boolean exceptionOccurred = false;
         try {
             SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
         } catch (Exception e) {
+            exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 2nd parameter inside count function" +
                     " - 'relative.error' should be of type Double but found STRING"));
         }
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -196,17 +204,19 @@ public class CountTestCase {
                 "from inputStream#window.length(" + windowLength + ")#approximate:count(number, 1.01) " +
                 "select * " +
                 "insert into outputStream;");
-
+        boolean exceptionOccurred = false;
         try {
             SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
         } catch (Exception e) {
+            exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 2nd parameter inside count function" +
                     " - 'relative.error' must be in the range of (0, 1) but found 1.01"));
         }
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
- @Test
+    @Test
     public void testApproximateCount_6() throws InterruptedException {
         final int windowLength = 1000;
 
@@ -221,15 +231,17 @@ public class CountTestCase {
                 "from inputStream#window.length(" + windowLength + ")#approximate:count(number, 0.01, number) " +
                 "select * " +
                 "insert into outputStream;");
-
+        boolean exceptionOccurred = false;
         try {
             SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
         } catch (Exception e) {
+            exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside count function" +
                     " - 'confidence' has to be a constant but found " +
                     "org.wso2.siddhi.core.executor.VariableExpressionExecutor"));
         }
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -247,14 +259,16 @@ public class CountTestCase {
                 "from inputStream#window.length(" + windowLength + ")#approximate:count(number, 0.04, '0.6') " +
                 "select * " +
                 "insert into outputStream;");
-
+        boolean exceptionOccurred = false;
         try {
             SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
         } catch (Exception e) {
+            exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside count function" +
                     " - 'confidence' should be of type Double but found STRING"));
         }
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -273,16 +287,17 @@ public class CountTestCase {
                 "from inputStream#window.length(" + windowLength + ")#approximate:count(number,0.04, -1.01) " +
                 "select * " +
                 "insert into outputStream;");
-
+        boolean exceptionOccurred = false;
         try {
             SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
         } catch (Exception e) {
+            exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside count function" +
                     " - 'confidence' must be in the range of (0, 1) but found -1.01"));
         }
+        Assert.assertEquals(true, exceptionOccurred);
     }
-
 
 
 }
