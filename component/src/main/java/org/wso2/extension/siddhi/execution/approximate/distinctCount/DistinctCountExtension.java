@@ -99,36 +99,17 @@ import java.util.Map;
                 @Example(
                         syntax = "define stream InputStream (someAttribute int);\n" +
                                 //TODO : \n after every line, camel case
-                                "from InputStream#approximate:distinctCount(someAttribute)\n" +
+                                "from InputStream#window.time(1000)#approximate:distinctCount(someAttribute)\n" +
                                 "select distinctCount, distinctCountLowerBound, distinctCountUpperBound\n" +
                                 "insert into OutputStream;\n",
-                        description = "Distinct count of events in a stream based on someAttribute is " +
+                        description = "Distinct count of events in a time window of a stream based on someAttribute is " +
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.95. " +
                                 "Here the distinct count is the number of different values received for " +
-                                "someAttribute. The answers are 95% guaranteed to have a +-1% error."
-                ), //TODO : distinctCount -> approximateCardinality, every output
-                @Example(
-                        syntax = "define stream InputStream (some_attribute string);\n" +
-                                "from InputStream#approximate:distinctCount(some_attribute, 0.05)\n" +
-                                "select distinctCount, distinctCountLowerBound, distinctCountUpperBound\n" +
-                                "insert into OutputStream;\n",
-                        description = "Distinct count of events in a stream based on someAttribute is " +
-                                "calculated for a relative error of 0.05 and a default confidence of 0.95. " +
-                                "Here the distinct count is the number of different values received for " +
-                                "someAttribute. The answers are 95% guaranteed to have a +-5% error."
-                ),
-                @Example(
-                        syntax = "define stream InputStream (someAttribute double);\n" +
-                                "from InputStream#approximate:distinctCount(someAttribute, 0.05, 0.65)\n" +
-                                "select distinctCount, distinctCountLowerBound, distinctCountUpperBound\n" +
-                                "insert into OutputStream;\n",
-                        description = "distinctCount of events in a stream based on someAttribute is " +
-                                "calculated for a relative error of 0.05 and a confidence of 0.65 ." +
-                                "Here the distinct count is the number of different values received for " +
-                                "someAttribute. The answers are 65% guaranteed to have a +-5% error."
-
-                        //TODO : remove example - done
-                ),
+                                "someAttribute considering the events received within last 1000ms time period. " +
+                                "The answers are 95% guaranteed to have a +-1% error relative to the distinct count. " +
+                                "The output will consist of the approximate distinct count, lower bound and " +
+                                "upper bound of the approximate answer."
+                ), //TODO : distinctCount -> approximateCardinality, every output - done
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);\n" +
                                 "from InputStream#window.length(1000)\n" +
@@ -139,7 +120,9 @@ import java.util.Map;
                                 "calculated for a relative error of 0.05 and a confidence of 0.65. " +
                                 "Here the distinct count is the number of different values values received " +
                                 "for someAttribute in the last 1000 events. " +
-                                "The answers are 65% guaranteed to have a +-5% error."
+                                "The answers are 65% guaranteed to have a +-5% error relative to the distinct count. " +
+                                "The output will consist of the approximate distinct count, lower bound and " +
+                                "upper bound of the approximate answer."
                         //TODO : explain more - done
                 )
         }

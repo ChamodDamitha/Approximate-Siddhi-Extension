@@ -104,9 +104,8 @@ import java.util.Map;
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.99. " +
                                 "Here the counts are calculated considering only the events belonging" +
                                 " to the last 1000 ms. The output will consist of the " +
-                                "approximate count the latest event, lower bound and " +
-                                "upper bound of the approximate answer additional to the other " +
-                                "attributes of the incoming event."
+                                "approximate count of the latest event, lower bound and " +
+                                "upper bound of the approximate answer."
                 ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);\n" +
@@ -116,9 +115,8 @@ import java.util.Map;
                         description = "Count(frequency) of events in a length window based on some_attribute is " +
                                 "calculated for an relative error of 0.05 and a confidence of 0.9. " +
                                 "Here the counts are calculated considering only the last 1000 events arrived. " +
-                                "The output will consist of the approximate count the latest event, lower bound and " +
-                                "upper bound of the approximate answer additional to the other " +
-                                "attributes of the incoming event."
+                                "The output will consist of the approximate count of the latest event, lower bound and " +
+                                "upper bound of the approximate answer."
                 )
         }
 )

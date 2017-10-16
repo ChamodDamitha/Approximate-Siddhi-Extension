@@ -105,7 +105,9 @@ import java.util.Map;
                         description = "Distinct count of events in a stream based on someAttribute is " +
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.95. " +
                                 "Here the distinct count is the number of different values received for " +
-                                "someAttribute. The answers are 95% guaranteed to have a +-1% error."
+                                "someAttribute. The answers are 95% guaranteed to have a +-1% error " +
+                                "relative to the distinct count. The output will consist of the approximate " +
+                                "distinct count, lower bound and upper bound of the approximate answer."
                 ), //TODO : distinctCount -> approximateCardinality, every output - done
                 @Example(
                         syntax = "define stream InputStream (some_attribute string);\n" +
@@ -115,7 +117,9 @@ import java.util.Map;
                         description = "Distinct count of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a default confidence of 0.95. " +
                                 "Here the distinct count is the number of different values received for " +
-                                "someAttribute. The answers are 95% guaranteed to have a +-5% error."
+                                "someAttribute. The answers are 95% guaranteed to have a +-5% error " +
+                                "relative to the distinct count. The output will consist of the approximate " +
+                                "distinct count, lower bound and upper bound of the approximate answer."
                 ),
                 @Example(
                         syntax = "define stream InputStream (someAttribute double);\n" +
@@ -125,7 +129,9 @@ import java.util.Map;
                         description = "distinctCount of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a confidence of 0.65 ." +
                                 "Here the distinct count is the number of different values received for " +
-                                "someAttribute. The answers are 65% guaranteed to have a +-5% error."
+                                "someAttribute. The answers are 65% guaranteed to have a +-5% error " +
+                                "relative to the distinct count. The output will consist of the approximate " +
+                                "distinct count, lower bound and upper bound of the approximate answer."
 
                         //TODO : remove example - done
                 )
