@@ -44,7 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//TODO : two extensions distinctCount, distinctCountEver
 
 /**
  * Performs HyperLogLog algorithm to get the approximate distinctCount of events in a stream.
@@ -53,8 +52,8 @@ import java.util.Map;
         name = "distinctCountEver",
         namespace = "approximate",
         description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
-                " and a confidence value to calculate the number of distinct events.", //TODO : reduce info - done
-        parameters = { //TODO : define distinctCount - done
+                " and a confidence value to calculate the number of distinct events.",
+        parameters = {
                 @Parameter(
                         name = "value",
                         description = "The value used to find distinctCount",
@@ -98,7 +97,6 @@ import java.util.Map;
         examples = {
                 @Example(
                         syntax = "define stream InputStream (someAttribute int);\n" +
-                                //TODO : \n after every line, camel case - done
                                 "from InputStream#approximate:distinctCountEver(someAttribute)\n" +
                                 "select distinctCountEver, distinctCountEverLowerBound, distinctCountEverUpperBound\n" +
                                 "insert into OutputStream;\n",
@@ -108,7 +106,7 @@ import java.util.Map;
                                 "someAttribute. The answers are 95% guaranteed to have a +-1% error " +
                                 "relative to the distinct count. The output will consist of the approximate " +
                                 "distinct count, lower bound and upper bound of the approximate answer."
-                ), //TODO : distinctCount -> approximateCardinality, every output - done
+                ),
                 @Example(
                         syntax = "define stream InputStream (some_attribute string);\n" +
                                 "from InputStream#approximate:distinctCountEver(some_attribute, 0.05)\n" +
@@ -133,7 +131,6 @@ import java.util.Map;
                                 "relative to the distinct count. The output will consist of the approximate " +
                                 "distinct count, lower bound and upper bound of the approximate answer."
 
-                        //TODO : remove example - done
                 )
         }
 )
@@ -164,7 +161,7 @@ public class DistinctCountEverExtension extends StreamProcessor {
             if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
                 throw new SiddhiAppCreationException("The 2nd parameter inside distinctCountEver function " +
                         "- 'relative.error' has to be a constant but found " +
-                        this.attributeExpressionExecutors[1].getClass().getCanonicalName()); //TODO : 2nd param 'relative.error' - done
+                        this.attributeExpressionExecutors[1].getClass().getCanonicalName());
             }
 
             if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
@@ -177,7 +174,7 @@ public class DistinctCountEverExtension extends StreamProcessor {
 
             if ((relativeError <= 0) || (relativeError >= 1)) {
                 throw new SiddhiAppCreationException("The 2nd parameter inside distinctCountEver function" +
-                        " - 'relative.error' must be in the range of (0, 1) but found " + relativeError); //TODO : print passed value - done
+                        " - 'relative.error' must be in the range of (0, 1) but found " + relativeError);
             }
         }
 
@@ -208,7 +205,7 @@ public class DistinctCountEverExtension extends StreamProcessor {
         hyperLogLog = new HyperLogLog<>(relativeError, confidence, false);
 
         List<Attribute> attributeList = new ArrayList<>(3);
-        attributeList.add(new Attribute("distinctCountEver", Attribute.Type.LONG)); //TODO : change names - done
+        attributeList.add(new Attribute("distinctCountEver", Attribute.Type.LONG));
         attributeList.add(new Attribute("distinctCountEverLowerBound", Attribute.Type.LONG));
         attributeList.add(new Attribute("distinctCountEverUpperBound", Attribute.Type.LONG));
         return attributeList;
@@ -220,7 +217,7 @@ public class DistinctCountEverExtension extends StreamProcessor {
         synchronized (this) {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
-                Object newData = valueExecutor.execute(streamEvent); //TODO : assign attributeExpressionExecutors[0] to a var - done
+                Object newData = valueExecutor.execute(streamEvent);
                 if (newData == null) {
                     streamEventChunk.remove();
                 } else {
@@ -236,7 +233,6 @@ public class DistinctCountEverExtension extends StreamProcessor {
                     Object[] outputData = {hyperLogLog.getCardinality(), hyperLogLog.getConfidenceInterval()[0],
                             hyperLogLog.getConfidenceInterval()[1]};
 
-                    //TODO : remove debugs and logs
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }
             }

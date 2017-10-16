@@ -1,4 +1,3 @@
-//TODO : include refered library license - done
 package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 import java.nio.charset.Charset;

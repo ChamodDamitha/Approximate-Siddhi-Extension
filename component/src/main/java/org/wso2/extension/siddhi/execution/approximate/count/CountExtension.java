@@ -93,7 +93,7 @@ import java.util.Map;
                         type = {DataType.LONG}
                 )
         },
-        examples = { //TODO : examples with windows only and warning , two types of windows - done
+        examples = {
 
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);\n" +
@@ -103,7 +103,8 @@ import java.util.Map;
                         description = "Count(frequency) of events in a time window based on some_attribute is " +
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.99. " +
                                 "Here the counts are calculated considering only the events belonging" +
-                                " to the last 1000 ms. The output will consist of the " +
+                                " to the last 1000 ms. The answers are 99% guaranteed to have a +-1% error " +
+                                "relative to the total event count within the window. The output will consist of the " +
                                 "approximate count of the latest event, lower bound and " +
                                 "upper bound of the approximate answer."
                 ),
@@ -115,6 +116,8 @@ import java.util.Map;
                         description = "Count(frequency) of events in a length window based on some_attribute is " +
                                 "calculated for an relative error of 0.05 and a confidence of 0.9. " +
                                 "Here the counts are calculated considering only the last 1000 events arrived. " +
+                                "The answers are 90% guaranteed to have a +-5%The answers are 99% guaranteed to have " +
+                                "a +-1% error relative to the total event count within the window." +
                                 "The output will consist of the approximate count of the latest event, lower bound and " +
                                 "upper bound of the approximate answer."
                 )
@@ -207,23 +210,21 @@ public class CountExtension extends StreamProcessor {
         synchronized (this) {
             while (streamEventChunk.hasNext()) {
                 StreamEvent streamEvent = streamEventChunk.next();
-                Object newData = valueExecutor.execute(streamEvent); //TODO : check null - done
+                Object newData = valueExecutor.execute(streamEvent);
                 if (newData == null) {
                     streamEventChunk.remove();
                 } else {
                     if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
-                        approximateCount = countMinSketch.insert(newData); //TODO : object for E - done
+                        approximateCount = countMinSketch.insert(newData);
                         confidenceInterval = countMinSketch.getConfidenceInterval(approximateCount);
                     } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
                         approximateCount = countMinSketch.remove(newData);
                         confidenceInterval = countMinSketch.getConfidenceInterval(approximateCount);
                     } else if (streamEvent.getType().equals(StreamEvent.Type.RESET)) {
-                        //TODO : rest event -> clear everything - done
                         countMinSketch.clear();
                     }
 //                  outputData = {count, lower bound, upper bound}
                     Object[] outputData = {approximateCount, confidenceInterval[0], confidenceInterval[1]};
-                    // TODO : two methods to count and bounds - done
 
                     complexEventPopulater.populateComplexEvent(streamEvent, outputData);
                 }

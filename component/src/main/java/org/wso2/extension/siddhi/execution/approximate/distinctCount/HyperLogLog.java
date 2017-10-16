@@ -23,14 +23,14 @@ import java.io.Serializable;
  * A probabilistic data structure to calculate the distinctCount of a set.
  * The referred research paper - HyperLogLog: the analysis of a near-optimal distinctCount estimation algorithm
  * by Philippe Flajolet, Éric Fusy, Olivier Gandouet and Frédéric Meunier.
- * http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf //TODO : name of the paper ,author - done
+ * http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
  * @param <E> is the type of objects in the set.
  */
 public class HyperLogLog<E> implements Serializable{
 
     private static final long serialVersionUID = -1285124336894867529L;
 
-    private static final double STANDARD_ERROR = 1.04; //TODO : capital constants - done
+    private static final double STANDARD_ERROR = 1.04;
     private static final double POW_2_OF_32 = Math.pow(2, 32);
 
     private boolean pastCountsEnabled;
@@ -79,7 +79,6 @@ public class HyperLogLog<E> implements Serializable{
         }
 
         countArray = new int[noOfBuckets];
-        //TODO : if enabled - done
         if (pastCountsEnabled) {
             pastCountsArray = new CountList[noOfBuckets];
             for (int i = 0; i < noOfBuckets; i++) {
@@ -180,7 +179,6 @@ public class HyperLogLog<E> implements Serializable{
 
 //      update the value in the  bucket
         int currentLeadingZeroCount = countArray[bucketId];
-        //TODO : if enabled - done
         if (pastCountsEnabled) {
             pastCountsArray[bucketId].add(newLeadingZeroCount);
         }
@@ -207,7 +205,7 @@ public class HyperLogLog<E> implements Serializable{
      *
      * @param item
      */
-    public void removeItem(E item) {//      ToDO : if enabled - done
+    public void removeItem(E item) {
         if (pastCountsEnabled) {
             int hash = getHashValue(item);
 
@@ -260,7 +258,7 @@ public class HyperLogLog<E> implements Serializable{
      *
      * @param lengthOfBucketId is the length of bucket id
      * @param noOfBuckets      is the number of buckets
-     * @return {@code estimationFactor} //TODO : proven values from research paper - done
+     * @return {@code estimationFactor}
      */
     private double getEstimationFactor(int lengthOfBucketId, int noOfBuckets) {
         switch (lengthOfBucketId) {
@@ -280,7 +278,7 @@ public class HyperLogLog<E> implements Serializable{
      */
     public void clear() {
         countArray = new int[noOfBuckets];
-        //TODO : if enabled - done
+
         if (pastCountsEnabled) {
             pastCountsArray = new CountList[noOfBuckets];
             for (int i = 0; i < noOfBuckets; i++) {

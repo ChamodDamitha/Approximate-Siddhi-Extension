@@ -29,7 +29,7 @@
     <artifactId>siddhi-execution-approximate-parent</artifactId>
     <version>1.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>Siddhi Execution Aproximate Extension Parent</name>
+    <name>Siddhi Execution Approximate Extension Parent</name>
     <url>http://wso2.org</url>
 
     <profiles>
@@ -45,18 +45,17 @@
     </profiles>
 
     <properties>
-        <siddhi.version>4.0.0-M61</siddhi.version>
+        <siddhi.version>4.0.0-M104</siddhi.version>
         <log4j.version>1.2.17.wso2v1</log4j.version>
-        <commons-lang3.version>3.3.2</commons-lang3.version>
-        <slf4j-version>1.7.5</slf4j-version>
-        <testng.version>6.8</testng.version>
-        <jacoco.version>0.7.9</jacoco.version>
+        <junit.version>4.10</junit.version>
+        <testng.version>6.11</testng.version>
+        <jacoco.maven.version>0.7.9</jacoco.maven.version>
     </properties>
 
     <scm>
-        <connection>scm:git:https://github.com/ChamodDamitha/siddhi-execution-approximate.git</connection>
-        <url>https://github.com/ChamodDamitha/siddhi-execution-approximate.git</url>
-        <developerConnection>scm:git:https://github.com/ChamodDamitha/siddhi-execution-approximate.git
+        <connection>scm:git:https://github.com/wso2-extensions/siddhi-execution-approximate.git</connection>
+        <url>https://github.com/wso2-extensions/siddhi-execution-approximate.git</url>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/siddhi-execution-approximate.git
         </developerConnection>
         <tag>HEAD</tag>
     </scm>
@@ -69,19 +68,9 @@
                 <version>${siddhi.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>${slf4j-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j-version}</version>
+                <groupId>org.wso2.siddhi</groupId>
+                <artifactId>siddhi-query-api</artifactId>
+                <version>${siddhi.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.log4j.wso2</groupId>
@@ -112,17 +101,6 @@
                 <version>${testng.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>org.jacoco</groupId>
-                <artifactId>org.jacoco.agent</artifactId>
-                <classifier>runtime</classifier>
-                <version>${jacoco.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>${commons-lang3.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -151,6 +129,7 @@
             <plugin>
                 <groupId>org.jvnet.maven.incrementalbuild</groupId>
                 <artifactId>incremental-build-plugin</artifactId>
+                <version>1.3</version>
                 <executions>
                     <execution>
                         <goals>
@@ -162,6 +141,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.1</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <source>1.8</source>
@@ -169,16 +149,12 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.wso2.siddhi</groupId>
-                <artifactId>siddhi-doc-gen</artifactId>
-                <version>${siddhi.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generate-md-docs</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <preparationGoals>clean install -Pdocumentation-deploy</preparationGoals>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
             </plugin>
         </plugins>
 
