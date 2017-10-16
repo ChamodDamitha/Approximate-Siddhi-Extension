@@ -78,17 +78,17 @@ import java.util.Map;
         },
         returnAttributes = {
                 @ReturnAttribute(
-                        name = "approximateCount",
+                        name = "count",
                         description = "Represents the approximate count considering the last event",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
-                        name = "approximateCountLowerBound",
+                        name = "countLowerBound",
                         description = "Represents the lower bound of the count considering the last event",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
-                        name = "approximateCountUpperBound",
+                        name = "countUpperBound",
                         description = "Represents the upper bound of the count considering the last event",
                         type = {DataType.LONG}
                 )
@@ -98,7 +98,7 @@ import java.util.Map;
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);\n" +
                                 "from InputStream#window.time(1000)#approximate:count(some_attribute)\n" +
-                                "select approximateCount, approximateCountLowerBound, approximateCountUpperBound\n" +
+                                "select count, countLowerBound, countUpperBound\n" +
                                 "insert into OutputStream;",
                         description = "Count(frequency) of events in a time window based on some_attribute is " +
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.99. " +
@@ -111,7 +111,7 @@ import java.util.Map;
                 @Example(
                         syntax = "define stream InputStream (some_attribute int);\n" +
                                 "from InputStream#window.length(1000)#approximate:count(some_attribute, 0.05, 0.9)\n" +
-                                "select approximateCount, approximateCountLowerBound, approximateCountUpperBound\n" +
+                                "select count, countLowerBound, countUpperBound\n" +
                                 "insert into OutputStream;",
                         description = "Count(frequency) of events in a length window based on some_attribute is " +
                                 "calculated for an relative error of 0.05 and a confidence of 0.9. " +
@@ -197,9 +197,9 @@ public class CountExtension extends StreamProcessor {
         countMinSketch = new CountMinSketch<>(relativeError, confidence);
 
         List<Attribute> attributeList = new ArrayList<>(3);
-        attributeList.add(new Attribute("approximateCount", Attribute.Type.LONG));
-        attributeList.add(new Attribute("approximateCountLowerBound", Attribute.Type.LONG));
-        attributeList.add(new Attribute("approximateCountUpperBound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("count", Attribute.Type.LONG));
+        attributeList.add(new Attribute("countLowerBound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("countUpperBound", Attribute.Type.LONG));
         return attributeList;
     }
 

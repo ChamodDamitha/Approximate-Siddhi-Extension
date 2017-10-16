@@ -80,17 +80,17 @@ import java.util.Map;
         },
         returnAttributes = {
                 @ReturnAttribute(
-                        name = "distinctCount",
+                        name = "distinctCountEver",
                         description = "Represents the distinct count considering the last event ",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
-                        name = "distinctCountLowerBound",
+                        name = "distinctCountEverLowerBound",
                         description = "Represents the lower bound of the distinct count considering the last event",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
-                        name = "distinctCountUpperBound",
+                        name = "distinctCountEverUpperBound",
                         description = "Represents the upper bound of the distinct count considering the last event",
                         type = {DataType.LONG}
                 )
@@ -98,19 +98,19 @@ import java.util.Map;
         examples = {
                 @Example(
                         syntax = "define stream InputStream (someAttribute int);\n" +
-                                //TODO : \n after every line, camel case
+                                //TODO : \n after every line, camel case - done
                                 "from InputStream#approximate:distinctCountEver(someAttribute)\n" +
-                                "select distinctCount, distinctCountLowerBound, distinctCountUpperBound\n" +
+                                "select distinctCountEver, distinctCountEverLowerBound, distinctCountEverUpperBound\n" +
                                 "insert into OutputStream;\n",
                         description = "Distinct count of events in a stream based on someAttribute is " +
                                 "calculated for a default relative error of 0.01 and a default confidence of 0.95. " +
                                 "Here the distinct count is the number of different values received for " +
                                 "someAttribute. The answers are 95% guaranteed to have a +-1% error."
-                ), //TODO : distinctCount -> approximateCardinality, every output
+                ), //TODO : distinctCount -> approximateCardinality, every output - done
                 @Example(
                         syntax = "define stream InputStream (some_attribute string);\n" +
                                 "from InputStream#approximate:distinctCountEver(some_attribute, 0.05)\n" +
-                                "select distinctCount\n" +
+                                "select distinctCountEver, distinctCountEverLowerBound, distinctCountEverUpperBound\n" +
                                 "insert into OutputStream;\n",
                         description = "Distinct count of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a default confidence of 0.95. " +
@@ -120,7 +120,7 @@ import java.util.Map;
                 @Example(
                         syntax = "define stream InputStream (someAttribute double);\n" +
                                 "from InputStream#approximate:distinctCountEver(someAttribute, 0.05, 0.65)\n" +
-                                "select distinctCount\n" +
+                                "select distinctCountEver, distinctCountEverLowerBound, distinctCountEverUpperBound\n" +
                                 "insert into OutputStream;\n",
                         description = "distinctCount of events in a stream based on someAttribute is " +
                                 "calculated for a relative error of 0.05 and a confidence of 0.65 ." +
@@ -202,9 +202,9 @@ public class DistinctCountEverExtension extends StreamProcessor {
         hyperLogLog = new HyperLogLog<>(relativeError, confidence, false);
 
         List<Attribute> attributeList = new ArrayList<>(3);
-        attributeList.add(new Attribute("distinctCount", Attribute.Type.LONG)); //TODO : change names - done
-        attributeList.add(new Attribute("distinctCountLowerBound", Attribute.Type.LONG));
-        attributeList.add(new Attribute("distinctCountUpperBound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("distinctCountEver", Attribute.Type.LONG)); //TODO : change names - done
+        attributeList.add(new Attribute("distinctCountEverLowerBound", Attribute.Type.LONG));
+        attributeList.add(new Attribute("distinctCountEverUpperBound", Attribute.Type.LONG));
         return attributeList;
     }
 
