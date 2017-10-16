@@ -2,9 +2,9 @@ package org.wso2.extension.siddhi.execution.approximate.distinctCount;
 
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 import org.wso2.siddhi.core.SiddhiAppRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.event.Event;
@@ -18,7 +18,7 @@ public class DistinctCountTestCase {
     private final int noOfEvents = 1000;
     private volatile boolean eventArrived;
 
-    @Before
+    @BeforeMethod
     public void init() {
         totalCount = 0;
         validCount = 0;
