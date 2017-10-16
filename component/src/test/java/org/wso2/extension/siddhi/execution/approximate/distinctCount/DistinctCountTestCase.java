@@ -433,7 +433,7 @@ public class DistinctCountTestCase {
         final double confidence = 0.95;
 
         LOG.info("Approximate Distinct Count Test Case -  to validate the 3rd parameter " +
-                "inside count function is a value out of 0.65, 0.95, 0.99");
+                "inside distinctCount function is a value out of 0.65, 0.95, 0.99");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";

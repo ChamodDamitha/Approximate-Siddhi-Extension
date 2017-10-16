@@ -8,6 +8,7 @@ import org.testng.annotations.Test;
 import org.wso2.siddhi.core.SiddhiAppRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.event.Event;
+import org.wso2.siddhi.core.exception.SiddhiAppCreationException;
 import org.wso2.siddhi.core.stream.input.InputHandler;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
 
@@ -30,7 +31,7 @@ public class DistinctCountEverTestCase {
         final double relativeError = 0.01;
         final double confidence = 0.95;
 
-        LOG.info("Approximate Cardinality Test Case - default relative error(" + relativeError + ") " +
+        LOG.info("Approximate Distinct Count Ever Test Case - default relative error(" + relativeError + ") " +
                 "and confidence(" + confidence + ")");
         SiddhiManager siddhiManager = new SiddhiManager();
 
@@ -92,7 +93,7 @@ public class DistinctCountEverTestCase {
         final double relativeError = 0.05;
         final double confidence = 0.95;
 
-        LOG.info("Approximate Cardinality Test Case - specified relative error(" + relativeError + ")" +
+        LOG.info("Approximate Distinct Count Ever Test Case - specified relative error(" + relativeError + ")" +
                 " and default confidence(" + confidence + ")");
         SiddhiManager siddhiManager = new SiddhiManager();
 
@@ -154,7 +155,7 @@ public class DistinctCountEverTestCase {
         final double relativeError = 0.05;
         final double confidence = 0.65;
 
-        LOG.info("Approximate Cardinality Test Case - specified relative error(" + relativeError + ")" +
+        LOG.info("Approximate Distinct Count Ever Test Case - specified relative error(" + relativeError + ")" +
                 " and specified confidence(" + confidence + ")");
         SiddhiManager siddhiManager = new SiddhiManager();
 
@@ -213,5 +214,196 @@ public class DistinctCountEverTestCase {
         siddhiAppRuntime.shutdown();
     }
 
+
+    @Test
+    public void testApproximateCardinality_4() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
+
+        LOG.info("Approximate Distinct Count Ever Test Case - to check the number of parameters passed " +
+                "to the distinctCountEver function are lesser");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:distinctCountEver() " +
+                "select * " +
+                "insert into outputStream;");
+
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("1 - 3 attributes are expected but 0 attributes" +
+                    " are found inside the distinctCountEver function"));
+        }
+        Assert.assertEquals(true,exceptionOccurred);
+    }
+
+    @Test
+    public void testApproximateCardinality_5() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
+
+        LOG.info("Approximate Distinct Count Ever Test Case - to validate the 2nd parameter inside" +
+                " distinctCountEver function is a constant");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:distinctCountEver(number, number) " +
+                "select * " +
+                "insert into outputStream;");
+
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("The 2nd parameter inside distinctCountEver" +
+                    " function - 'relative.error' has to be a constant but found " +
+                    "org.wso2.siddhi.core.executor.VariableExpressionExecutor"));
+        }
+        Assert.assertEquals(true,exceptionOccurred);
+    }
+
+    @Test
+    public void testApproximateCardinality_6() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
+
+        LOG.info("Approximate Distinct Count Ever Test Case - to validate the 2nd parameter inside distinctCountEver" +
+                " function is a double");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:distinctCountEver(number, '0.01') " +
+                "select * " +
+                "insert into outputStream;");
+
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("The 2nd parameter inside distinctCountEver function" +
+                    " - 'relative.error' should be of type Double but found STRING"));
+        }
+        Assert.assertEquals(true,exceptionOccurred);
+    }
+
+    @Test
+    public void testApproximateCardinality_7() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
+
+        LOG.info("Approximate Distinct Count Ever Test Case - to validate the 2nd parameter " +
+                "inside distinctCountEver function is in (0, 1) range");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:distinctCountEver(number, 5.31) " +
+                "select * " +
+                "insert into outputStream;");
+
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("The 2nd parameter inside distinctCountEver " +
+                    "function - 'relative.error' must be in the range of (0, 1) but found 5.31"));
+        }
+        Assert.assertEquals(true,exceptionOccurred);
+    }
+
+    @Test
+    public void testApproximateCardinality_8() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
+
+        LOG.info("Approximate Distinct Count Ever Test Case - to validate the 3rd parameter inside distinctCountEver" +
+                " function is a constant");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:distinctCountEver(number, 0.31, number) " +
+                "select * " +
+                "insert into outputStream;");
+
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside distinctCountEver" +
+                    " function - 'confidence' has to be a constant but found " +
+                    "org.wso2.siddhi.core.executor.VariableExpressionExecutor"));
+        }
+        Assert.assertEquals(true,exceptionOccurred);
+    }
+
+    @Test
+    public void testApproximateCardinality_9() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
+
+        LOG.info("Approximate Distinct Count Ever Test Case - to validate the 3rd parameter inside distinctCountEver" +
+                " function is a double");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:distinctCountEver(number, 0.31, '0.65') " +
+                "select * " +
+                "insert into outputStream;");
+
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside distinctCountEver" +
+                    " function - 'confidence' should be of type Double but found STRING"));
+        }
+        Assert.assertEquals(true,exceptionOccurred);
+    }
+
+    @Test
+    public void testApproximateCardinality_10() throws InterruptedException {
+        final double relativeError = 0.01;
+        final double confidence = 0.95;
+
+        LOG.info("Approximate Distinct Count Ever Test Case - to validate the 3rd parameter " +
+                "inside distinctCountEver function is a value out of 0.65, 0.95, 0.99");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#approximate:distinctCountEver(number, 0.31, 0.94) " +
+                "select * " +
+                "insert into outputStream;");
+
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside distinctCountEver" +
+                    " function - 'confidence' must be a value from 0.65, 0.95 and 0.99 but found 0.94"));
+        }
+        Assert.assertEquals(true,exceptionOccurred);
+    }
 }
 

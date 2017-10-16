@@ -181,7 +181,7 @@ public class DistinctCountEverExtension extends StreamProcessor {
         //expressionExecutors[2] --> confidence
         if (attributeExpressionExecutors.length > 2) {
             if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
-                throw new SiddhiAppCreationException("The 2nd parameter inside distinctCountEver function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCountEver function - " +
                         "'confidence' has to be a constant but found " +
                         this.attributeExpressionExecutors[2].getClass().getCanonicalName());
             }
@@ -189,14 +189,14 @@ public class DistinctCountEverExtension extends StreamProcessor {
             if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
                 confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
             } else {
-                throw new SiddhiAppCreationException("The 2nd parameter inside distinctCountEver function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCountEver function - " +
                         "'confidence' should be of type Double but found " +
                         attributeExpressionExecutors[2].getReturnType());
             }
 
             if (Math.abs(confidence - 0.65) > 0.0000001 && Math.abs(confidence - 0.95) > 0.0000001
                     && Math.abs(confidence - 0.99) > 0.0000001) {
-                throw new SiddhiAppCreationException("he 2nd parameter inside distinctCountEver function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCountEver function - " +
                         "'confidence' must be a value from 0.65, 0.95 and 0.99 but found " + confidence);
             }
         }
