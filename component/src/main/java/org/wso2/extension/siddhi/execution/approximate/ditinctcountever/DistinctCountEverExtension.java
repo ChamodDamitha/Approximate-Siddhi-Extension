@@ -16,10 +16,10 @@
  * under the License.
  */
 
-package org.wso2.extension.siddhi.execution.approximate.ditinctCountEver;
+package org.wso2.extension.siddhi.execution.approximate.ditinctcountever;
 
 import org.apache.log4j.Logger;
-import org.wso2.extension.siddhi.execution.approximate.distinctCount.HyperLogLog;
+import org.wso2.extension.siddhi.execution.approximate.distinctcount.HyperLogLog;
 import org.wso2.siddhi.annotation.Example;
 import org.wso2.siddhi.annotation.Extension;
 import org.wso2.siddhi.annotation.Parameter;
@@ -152,7 +152,8 @@ public class DistinctCountEverExtension extends StreamProcessor {
 //       validate number of attributes
         if (!(attributeExpressionExecutors.length >= 1 && attributeExpressionExecutors.length <= 3)) {
             throw new SiddhiAppCreationException("1 - 3 attributes are expected but " +
-                    attributeExpressionExecutors.length + " attributes are found inside the distinctCountEver function");
+                    attributeExpressionExecutors.length + " attributes are found inside the " +
+                    "distinctCountEver function");
         }
 
         //expressionExecutors[1] --> relativeError

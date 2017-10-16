@@ -17,7 +17,7 @@
 */
 package org.wso2.extension.siddhi.execution.approximate.count;
 
-import org.wso2.extension.siddhi.execution.approximate.distinctCount.MurmurHash;
+import org.wso2.extension.siddhi.execution.approximate.distinctcount.MurmurHash;
 
 import java.io.Serializable;
 import java.util.Random;
@@ -26,9 +26,10 @@ import java.util.Random;
  * A probabilistic data structure to keep count of different items.
  * The referred research paper - Count-Min Sketch by Graham Cormode
  * http://dimacs.rutgers.edu/%7Egraham/pubs/papers/cmencyc.pdf
+ *
  * @param <E> is the type of data to be counted
  */
-public class CountMinSketch<E> implements Serializable{
+public class CountMinSketch<E> implements Serializable {
 
     private static final long serialVersionUID = -7485124336894867529L;
 
@@ -41,8 +42,8 @@ public class CountMinSketch<E> implements Serializable{
     private long[][] countArray;
 
     //  hash coefficients
-    private int[] hashCoefficients_A;
-    private int[] hashCoefficients_B;
+    private int[] hashCoefficientsA;
+    private int[] hashCoefficientsB;
 
     //  Error factors of approximation
     private double relativeError;
@@ -78,12 +79,12 @@ public class CountMinSketch<E> implements Serializable{
 //      create random hash coefficients
 //      using linear hash functions of the form (a*x+b)
 //      a,b are chosen independently for each hash function.
-        this.hashCoefficients_A = new int[depth];
-        this.hashCoefficients_B = new int[depth];
+        this.hashCoefficientsA = new int[depth];
+        this.hashCoefficientsB = new int[depth];
         Random random = new Random(123);
         for (int i = 0; i < depth; i++) {
-            hashCoefficients_A[i] = random.nextInt(Integer.MAX_VALUE);
-            hashCoefficients_B[i] = random.nextInt(Integer.MAX_VALUE);
+            hashCoefficientsA[i] = random.nextInt(Integer.MAX_VALUE);
+            hashCoefficientsB[i] = random.nextInt(Integer.MAX_VALUE);
         }
     }
 
@@ -108,7 +109,7 @@ public class CountMinSketch<E> implements Serializable{
         int[] hashValues = new int[depth];
         int hash = MurmurHash.hash(item);
         for (int i = 0; i < depth; i++) {
-            hashValues[i] = hashCoefficients_A[i] * hash + hashCoefficients_B[i];
+            hashValues[i] = hashCoefficientsA[i] * hash + hashCoefficientsB[i];
         }
         return hashValues;
     }
@@ -176,6 +177,7 @@ public class CountMinSketch<E> implements Serializable{
      * Calculate the confidence interval of the approximate count
      * approximateCount - (totalNoOfItems * relativeError) <= exactCount
      * <= approximateCount + (totalNoOfItems * relativeError)
+     *
      * @param count
      * @return a long array which contains the lower bound and
      * the upper bound of the confidence interval consecutively

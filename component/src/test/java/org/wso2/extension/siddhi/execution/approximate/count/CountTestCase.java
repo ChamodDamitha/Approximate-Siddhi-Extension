@@ -11,7 +11,6 @@ import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.exception.SiddhiAppCreationException;
 import org.wso2.siddhi.core.stream.input.InputHandler;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
-import org.wso2.siddhi.core.util.EventPrinter;
 
 public class CountTestCase {
     static final Logger LOG = Logger.getLogger(CountTestCase.class);
@@ -89,9 +88,6 @@ public class CountTestCase {
         Thread.sleep(100);
         Assert.assertEquals(totalEventsSent, totalEventsArrived);
         Assert.assertTrue(eventArrived);
-
-        System.out.println("Retained Confidence : "
-                + ((double) validEvents / totalEventsArrived));//TODO : testing
 
 //      confidence test
         if ((double) validEvents / totalEventsArrived >= confidence) {

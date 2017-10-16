@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.extension.siddhi.execution.approximate.distinctCount;
+package org.wso2.extension.siddhi.execution.approximate.distinctcount;
 
 import java.io.Serializable;
 
@@ -24,9 +24,10 @@ import java.io.Serializable;
  * The referred research paper - HyperLogLog: the analysis of a near-optimal distinctCount estimation algorithm
  * by Philippe Flajolet, Éric Fusy, Olivier Gandouet and Frédéric Meunier.
  * http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf
+ *
  * @param <E> is the type of objects in the set.
  */
-public class HyperLogLog<E> implements Serializable{
+public class HyperLogLog<E> implements Serializable {
 
     private static final long serialVersionUID = -1285124336894867529L;
 
@@ -54,8 +55,8 @@ public class HyperLogLog<E> implements Serializable{
      * being within the error margin.
      * Based on the relative error the array size is calculated.
      *
-     * @param relativeError is a number in the range (0, 1)
-     * @param confidence is a value out of 0.65, 0.95, 0.99
+     * @param relativeError     is a number in the range (0, 1)
+     * @param confidence        is a value out of 0.65, 0.95, 0.99
      * @param pastCountsEnabled is a boolean value to mention whether to keep track of past counts or not.
      */
     public HyperLogLog(double relativeError, double confidence, boolean pastCountsEnabled) {
@@ -96,12 +97,12 @@ public class HyperLogLog<E> implements Serializable{
      * Calculate the distinctCount(number of unique items in a set)
      * by calculating the harmonic mean of the counts in the buckets.
      * Check for the upper and lower bounds to modify the estimation.
-     *
+     * <p>
      * n - number of buckets
      * ci - count of the i th bucket
-     *
+     * <p>
      * harmonic count mean = n / ((1/2)^c1 + (1/2)^c2 + ... + (1/2)^cn)
-     *
+     * <p>
      * estimated distinctCount = n * estimationFactor * harmonicCountMean
      */
     private void calculateCardinality() {
@@ -139,6 +140,7 @@ public class HyperLogLog<E> implements Serializable{
     /**
      * Calculate the confidence interval for the current distinctCount.
      * The confidence values can be one value out of 0.65, 0.95, 0.99.
+     *
      * @return an long array which contain the lower bound and the upper bound of the confidence interval
      * e.g. - {310, 350} for the distinctCount of 330
      */
@@ -146,17 +148,15 @@ public class HyperLogLog<E> implements Serializable{
         long[] confidenceInterval = new long[2];
 
 //      sigma = relative error
-        if (Math.abs(confidence - 0.65) < 0.0000001) {//      65% sure the answer in the range of sigma
+        if (Math.abs(confidence - 0.65) < 0.0000001) { //      65% sure the answer in the range of sigma
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 0.5));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError * 0.5));
-        }
-        else if (Math.abs(confidence - 0.95) < 0.0000001) {//      95% sure the answer in the range of (2 * sigma)
+        } else if (Math.abs(confidence - 0.95) < 0.0000001) { //      95% sure the answer in the range of (2 * sigma)
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError));
             confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError));
-        }
-        else if (Math.abs(confidence - 0.99) < 0.0000001) {//      99% sure the answer in the range of (3 * sigma)
+        } else if (Math.abs(confidence - 0.99) < 0.0000001) { //      99% sure the answer in the range of (3 * sigma)
             confidenceInterval[0] = (long) Math.floor(currentCardinality - (currentCardinality * relativeError * 1.5));
-            confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError* 1.5));
+            confidenceInterval[1] = (long) Math.ceil(currentCardinality + (currentCardinality * relativeError * 1.5));
         }
         return confidenceInterval;
     }

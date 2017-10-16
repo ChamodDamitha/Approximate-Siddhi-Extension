@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.extension.siddhi.execution.approximate.distinctCount;
+package org.wso2.extension.siddhi.execution.approximate.distinctcount;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
  * A data structure to keep track of maximum zero counts for a bucket
  * to restore the previous maximums when the old counts are removed.
  */
-public class CountList implements Serializable{
+public class CountList implements Serializable {
 
     private static final long serialVersionUID = -3455124336894867529L;
 

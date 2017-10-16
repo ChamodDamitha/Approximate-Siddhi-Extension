@@ -1,4 +1,4 @@
-package org.wso2.extension.siddhi.execution.approximate.distinctCount;
+package org.wso2.extension.siddhi.execution.approximate.distinctcount;
 
 
 import org.apache.log4j.Logger;
@@ -88,8 +88,6 @@ public class DistinctCountTestCase {
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
-        System.out.println("Real Confidence : " + ((double) validCount / totalCount));//TODO : testing
-
 //      confidence check
         if ((double) validCount / totalCount >= 0.95) {
             Assert.assertEquals(true, true);
@@ -162,7 +160,6 @@ public class DistinctCountTestCase {
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
-        System.out.println("Real Confidence : " + ((double) validCount / totalCount));//TODO : testing
 
 //      confidence check
         if ((double) validCount / totalCount >= 0.95) {
@@ -236,8 +233,6 @@ public class DistinctCountTestCase {
         Assert.assertEquals(noOfEvents, totalCount);
         Assert.assertTrue(eventArrived);
 
-        System.out.println("Real Confidence : " + ((double) validCount / totalCount));//TODO : testing
-
 //      confidence check
         if ((double) validCount / totalCount >= 0.95) {
             Assert.assertEquals(true, true);
@@ -274,7 +269,7 @@ public class DistinctCountTestCase {
             Assert.assertTrue(e.getCause().getMessage().contains("1 - 3 attributes are expected but 0 attributes" +
                     " are found inside the distinctCount function"));
         }
-        Assert.assertEquals(true,exceptionOccurred);
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -303,7 +298,7 @@ public class DistinctCountTestCase {
                     " 'relative.error' has to be a constant but found " +
                     "org.wso2.siddhi.core.executor.VariableExpressionExecutor"));
         }
-        Assert.assertEquals(true,exceptionOccurred);
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -332,7 +327,7 @@ public class DistinctCountTestCase {
                     " - 'relative.error' should be of type Double but found STRING"));
         }
 
-        Assert.assertEquals(true,exceptionOccurred);
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -361,7 +356,7 @@ public class DistinctCountTestCase {
                     " - 'relative.error' must be in the range of (0, 1) but found 5.31"));
         }
 
-        Assert.assertEquals(true,exceptionOccurred);
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -391,7 +386,7 @@ public class DistinctCountTestCase {
                     "org.wso2.siddhi.core.executor.VariableExpressionExecutor"));
         }
 
-        Assert.assertEquals(true,exceptionOccurred);
+        Assert.assertEquals(true, exceptionOccurred);
     }
 
     @Test
@@ -421,7 +416,7 @@ public class DistinctCountTestCase {
                     " - 'confidence' should be of type Double but found STRING"));
         }
 
-        Assert.assertEquals(true,exceptionOccurred);
+        Assert.assertEquals(true, exceptionOccurred);
 
     }
 
@@ -451,7 +446,7 @@ public class DistinctCountTestCase {
                     "'confidence' must be a value from 0.65, 0.95 and 0.99 but found 0.66"));
         }
 
-        Assert.assertEquals(true,exceptionOccurred);
+        Assert.assertEquals(true, exceptionOccurred);
     }
 }
 

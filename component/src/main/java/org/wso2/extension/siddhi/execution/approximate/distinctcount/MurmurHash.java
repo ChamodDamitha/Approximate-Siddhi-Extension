@@ -1,4 +1,4 @@
-package org.wso2.extension.siddhi.execution.approximate.distinctCount;
+package org.wso2.extension.siddhi.execution.approximate.distinctcount;
 
 import java.nio.charset.Charset;
 
@@ -9,9 +9,9 @@ import java.nio.charset.Charset;
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -28,7 +28,7 @@ import java.nio.charset.Charset;
  * Andrzej Bialecki (ab at getopt org).
  * </p>
  */
-public final class MurmurHash{
+public final class MurmurHash {
     private MurmurHash() {
     }
 

@@ -25,7 +25,6 @@ import org.wso2.siddhi.annotation.Parameter;
 import org.wso2.siddhi.annotation.ReturnAttribute;
 import org.wso2.siddhi.annotation.util.DataType;
 import org.wso2.siddhi.core.config.SiddhiAppContext;
-import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.ComplexEventChunk;
 import org.wso2.siddhi.core.event.stream.StreamEvent;
 import org.wso2.siddhi.core.event.stream.StreamEventCloner;
@@ -116,10 +115,10 @@ import java.util.Map;
                         description = "Count(frequency) of events in a length window based on some_attribute is " +
                                 "calculated for an relative error of 0.05 and a confidence of 0.9. " +
                                 "Here the counts are calculated considering only the last 1000 events arrived. " +
-                                "The answers are 90% guaranteed to have a +-5%The answers are 99% guaranteed to have " +
-                                "a +-1% error relative to the total event count within the window." +
-                                "The output will consist of the approximate count of the latest event, lower bound and " +
-                                "upper bound of the approximate answer."
+                                "The answers are 90% guaranteed to have a +-5%The answers are 99% guaranteed to " +
+                                "have a +-1% error relative to the total event count within the window." +
+                                "The output will consist of the approximate count of the latest event, " +
+                                "lower bound and upper bound of the approximate answer."
                 )
         }
 )
