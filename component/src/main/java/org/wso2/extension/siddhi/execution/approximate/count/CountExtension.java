@@ -149,9 +149,8 @@ public class CountExtension extends StreamProcessor {
 
         //expressionExecutors[1] --> relativeError
         if (attributeExpressionExecutors.length > 1) {
-
             if (!(attributeExpressionExecutors[1] instanceof ConstantExpressionExecutor)) {
-                throw new SiddhiAppCreationException("The 2nd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 2nd parameter inside count function - " +
                         "'relative.error' has to be a constant but found " +
                         this.attributeExpressionExecutors[1].getClass().getCanonicalName());
             }
@@ -159,13 +158,13 @@ public class CountExtension extends StreamProcessor {
             if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
                 relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
             } else {
-                throw new SiddhiAppCreationException("The 2nd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 2nd parameter inside count function - " +
                         "'relative.error' should be of type Double but found " +
                         attributeExpressionExecutors[1].getReturnType());
             }
 
             if ((relativeError <= 0) || (relativeError >= 1)) {
-                throw new SiddhiAppCreationException("The 2nd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 2nd parameter inside count function - " +
                         "'relative.error' must be in the range of (0, 1) but found " + relativeError);
             }
         }
@@ -174,7 +173,7 @@ public class CountExtension extends StreamProcessor {
         if (attributeExpressionExecutors.length > 2) {
 
             if (!(attributeExpressionExecutors[2] instanceof ConstantExpressionExecutor)) {
-                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside count function - " +
                         "'confidence' has to be a constant but found " +
                         this.attributeExpressionExecutors[2].getClass().getCanonicalName());
             }
@@ -182,13 +181,13 @@ public class CountExtension extends StreamProcessor {
             if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
                 confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
             } else {
-                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside count function - " +
                         "'confidence' should be of type Double but found " +
                         attributeExpressionExecutors[2].getReturnType());
             }
 
             if ((confidence <= 0) || (confidence >= 1)) {
-                throw new SiddhiAppCreationException("The 3rd parameter inside distinctCount function - " +
+                throw new SiddhiAppCreationException("The 3rd parameter inside count function - " +
                         "'confidence' must be in the range of (0, 1) but found " + confidence);
             }
         }
