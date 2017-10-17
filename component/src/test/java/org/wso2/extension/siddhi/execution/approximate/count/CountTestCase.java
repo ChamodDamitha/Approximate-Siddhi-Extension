@@ -90,11 +90,9 @@ public class CountTestCase {
         Assert.assertTrue(eventArrived);
 
 //      confidence test
-        if ((double) validEvents / totalEventsArrived >= confidence) { //todo : assert condition
-            Assert.assertEquals(true, true);
-        } else {
-            Assert.assertEquals(true, false);
-        }
+// todo : assert condition - done
+        Assert.assertTrue((double) validEvents / totalEventsArrived >= confidence);
+
 
         siddhiAppRuntime.shutdown();
     }
