@@ -25,8 +25,7 @@ import java.util.ArrayList;
  * to restore the previous maximums when the old counts are removed.
  */
 public class CountList implements Serializable {
-
-    private static final long serialVersionUID = -3455124336894867529L;
+    private static final long serialVersionUID = 4596984540980789758L;
 
     ArrayList<Integer> counts;
 

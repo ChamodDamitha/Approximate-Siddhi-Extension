@@ -18,7 +18,6 @@
 
 package org.wso2.extension.siddhi.execution.approximate.count;
 
-import org.apache.log4j.Logger;
 import org.wso2.siddhi.annotation.Example;
 import org.wso2.siddhi.annotation.Extension;
 import org.wso2.siddhi.annotation.Parameter;
@@ -32,6 +31,7 @@ import org.wso2.siddhi.core.event.stream.populater.ComplexEventPopulater;
 import org.wso2.siddhi.core.exception.SiddhiAppCreationException;
 import org.wso2.siddhi.core.executor.ConstantExpressionExecutor;
 import org.wso2.siddhi.core.executor.ExpressionExecutor;
+import org.wso2.siddhi.core.executor.VariableExpressionExecutor;
 import org.wso2.siddhi.core.query.processor.Processor;
 import org.wso2.siddhi.core.query.processor.stream.StreamProcessor;
 import org.wso2.siddhi.core.util.config.ConfigReader;
@@ -50,7 +50,8 @@ import java.util.Map;
         name = "count",
         namespace = "approximate",
         description = "Performs Count-min-sketch algorithm on a window of streaming data set based on a specific " +
-                "relative error and  a confidence value to calculate the approximate count(frequency) of events.",
+                "relative error and  a confidence value to calculate the approximate count(frequency) of events. " +
+                "Using without a window may return out of memory errors.", //TODO : mention about memory error - done
         parameters = {
                 @Parameter(
                         name = "value",
@@ -62,7 +63,7 @@ import java.util.Map;
                         name = "relative.error",
                         description = "This is the relative error for which the count is obtained. " +
                                 "The values must be in the range of (0, 1).",
-                        type = {DataType.DOUBLE},
+                        type = {DataType.DOUBLE, DataType.FLOAT}, //TODO : type float - done
                         optional = true,
                         defaultValue = "0.01"
                 ),
@@ -70,65 +71,67 @@ import java.util.Map;
                         name = "confidence",
                         description = "This is the confidence for which the relative error is true. " +
                                 "The values must be in the range of (0, 1).",
-                        type = {DataType.DOUBLE},
+                        type = {DataType.DOUBLE, DataType.FLOAT},
                         optional = true,
                         defaultValue = "0.99"
                 )
         },
         returnAttributes = {
                 @ReturnAttribute(
-                        name = "count",
-                        description = "Represents the approximate count considering the last event",
+                        name = "count", //TODO : mention per attribute count - done
+                        description = "Represents the approximate count per attribute considering the latest event",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
                         name = "countLowerBound",
-                        description = "Represents the lower bound of the count considering the last event",
+                        description = "Represents the lower bound of the count per attribute" +
+                                " considering the latest event",
                         type = {DataType.LONG}
                 ),
                 @ReturnAttribute(
                         name = "countUpperBound",
-                        description = "Represents the upper bound of the count considering the last event",
+                        description = "Represents the upper bound of the count per attribute " +
+                                "considering the latest event",
                         type = {DataType.LONG}
                 )
         },
         examples = {
 
                 @Example(
-                        syntax = "define stream InputStream (some_attribute int);\n" +
-                                "from InputStream#window.time(1000)#approximate:count(some_attribute)\n" +
+                        syntax = "define stream requestStream (ip string);\n" + //TODO : change attribute to concrete one - done
+                                "from requestStream#window.time(1000)#approximate:count(ip)\n" +
                                 "select count, countLowerBound, countUpperBound\n" +
                                 "insert into OutputStream;",
-                        description = "Count(frequency) of events in a time window based on some_attribute is " +
-                                "calculated for a default relative error of 0.01 and a default confidence of 0.99. " +
-                                "Here the counts are calculated considering only the events belonging" +
+                        description = "Count(frequency) of requests from different ip addresses" +
+                                " in a time window is calculated for a default relative error of 0.01 " +
+                                "and a default confidence of 0.99. " +
+                                "Here the counts are calculated considering only the events belong" +
                                 " to the last 1000 ms. The answers are 99% guaranteed to have a +-1% error " +
-                                "relative to the total event count within the window. The output will consist of the " +
+                                "relative to the total event count within the window. " +
+                                "The output will consist of the " +
                                 "approximate count of the latest event, lower bound and " +
                                 "upper bound of the approximate answer."
-                ),
+                ), //TODO : example for 2 attribute case - no need
                 @Example(
-                        syntax = "define stream InputStream (some_attribute int);\n" +
-                                "from InputStream#window.length(1000)#approximate:count(some_attribute, 0.05, 0.9)\n" +
+                        syntax = "define stream transactionStream (userId int, amount double);\n" +
+                                "from transactionStream#window.length(1000)#approximate:count(userId, 0.05, 0.9)\n" +
                                 "select count, countLowerBound, countUpperBound\n" +
                                 "insert into OutputStream;",
-                        description = "Count(frequency) of events in a length window based on some_attribute is " +
+                        description = "Count(frequency) of transactions done by different users out of " +
+                                "last 1000 transactions based on the userId is " +
                                 "calculated for an relative error of 0.05 and a confidence of 0.9. " +
                                 "Here the counts are calculated considering only the last 1000 events arrived. " +
                                 "The answers are 90% guaranteed to have a +-5%The answers are 99% guaranteed to " +
-                                "have a +-1% error relative to the total event count within the window." +
+                                "have a +-5% error relative to the total event count within the window." +
                                 "The output will consist of the approximate count of the latest event, " +
                                 "lower bound and upper bound of the approximate answer."
                 )
         }
 )
 public class CountExtension extends StreamProcessor {
-    private static final Logger logger = Logger.getLogger(CountExtension.class.getName());
 
     private CountMinSketch<Object> countMinSketch;
 
-    private long approximateCount;
-    private long[] confidenceInterval = new long[2];
     private ExpressionExecutor valueExecutor;
 
     @Override
@@ -140,11 +143,22 @@ public class CountExtension extends StreamProcessor {
         double relativeError = 0.01;
         double confidence = 0.99;
 
+//TODO : neglect 2 attr case - done
 //       validate number of attributes
-        if (!(attributeExpressionExecutors.length >= 1 && attributeExpressionExecutors.length <= 3)) {
-            throw new SiddhiAppCreationException("1 - 3 attributes are expected but " +
+        if (!(attributeExpressionExecutors.length == 1 || attributeExpressionExecutors.length == 3)) {
+            throw new SiddhiAppCreationException("1 or 3 attributes are expected but " +
                     attributeExpressionExecutors.length + " attributes are found inside the count function");
         }
+
+        //TODO : check for the variable - done
+        //expressionExecutors[0] --> value
+        if (!(attributeExpressionExecutors[0] instanceof VariableExpressionExecutor)) {
+            throw new SiddhiAppCreationException("The 1st parameter inside count function - " +
+                    "'value' has to be a variable but found " +
+                    this.attributeExpressionExecutors[0].getClass().getCanonicalName());
+        }
+        valueExecutor = attributeExpressionExecutors[0];
+
 
         //expressionExecutors[1] --> relativeError
         if (attributeExpressionExecutors.length > 1) {
@@ -154,11 +168,12 @@ public class CountExtension extends StreamProcessor {
                         this.attributeExpressionExecutors[1].getClass().getCanonicalName());
             }
 
-            if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
+            if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE ||
+                    attributeExpressionExecutors[1].getReturnType() == Attribute.Type.FLOAT) {
                 relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
             } else {
                 throw new SiddhiAppCreationException("The 2nd parameter inside count function - " +
-                        "'relative.error' should be of type Double but found " +
+                        "'relative.error' should be of type Double or Float but found " +
                         attributeExpressionExecutors[1].getReturnType());
             }
 
@@ -177,11 +192,12 @@ public class CountExtension extends StreamProcessor {
                         this.attributeExpressionExecutors[2].getClass().getCanonicalName());
             }
 
-            if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
+            if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE ||
+                    attributeExpressionExecutors[1].getReturnType() == Attribute.Type.FLOAT) {
                 confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
             } else {
                 throw new SiddhiAppCreationException("The 3rd parameter inside count function - " +
-                        "'confidence' should be of type Double but found " +
+                        "'confidence' should be of type Double or Float but found " +
                         attributeExpressionExecutors[2].getReturnType());
             }
 
@@ -190,8 +206,6 @@ public class CountExtension extends StreamProcessor {
                         "'confidence' must be in the range of (0, 1) but found " + confidence);
             }
         }
-
-        valueExecutor = attributeExpressionExecutors[0];
 
         countMinSketch = new CountMinSketch<>(relativeError, confidence);
 
@@ -205,29 +219,32 @@ public class CountExtension extends StreamProcessor {
     @Override
     protected void process(ComplexEventChunk<StreamEvent> streamEventChunk, Processor processor,
                            StreamEventCloner streamEventCloner, ComplexEventPopulater complexEventPopulater) {
-        synchronized (this) {
-            while (streamEventChunk.hasNext()) {
-                StreamEvent streamEvent = streamEventChunk.next();
-                Object newData = valueExecutor.execute(streamEvent);
-                if (newData == null) {
-                    streamEventChunk.remove();
-                } else {
-                    if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
-                        approximateCount = countMinSketch.insert(newData);
-                        confidenceInterval = countMinSketch.getConfidenceInterval(approximateCount);
-                    } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
-                        approximateCount = countMinSketch.remove(newData);
-                        confidenceInterval = countMinSketch.getConfidenceInterval(approximateCount);
-                    } else if (streamEvent.getType().equals(StreamEvent.Type.RESET)) {
-                        countMinSketch.clear();
-                    }
-//                  outputData = {count, lower bound, upper bound}
-                    Object[] outputData = {approximateCount, confidenceInterval[0], confidenceInterval[1]};
+        //TODO : make approximateCount method var, move synchronized to countmin sketch - done
+        long approximateCount = 0;
+        long[] confidenceInterval = new long[2];
 
-                    complexEventPopulater.populateComplexEvent(streamEvent, outputData);
+        while (streamEventChunk.hasNext()) {
+            StreamEvent streamEvent = streamEventChunk.next();
+            Object newData = valueExecutor.execute(streamEvent);
+            if (newData == null) {
+                streamEventChunk.remove();
+            } else {
+                if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
+                    approximateCount = countMinSketch.insert(newData);
+                    confidenceInterval = countMinSketch.getConfidenceInterval(approximateCount);
+                } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
+                    approximateCount = countMinSketch.remove(newData);
+                    confidenceInterval = countMinSketch.getConfidenceInterval(approximateCount);
+                } else if (streamEvent.getType().equals(StreamEvent.Type.RESET)) {
+                    countMinSketch.clear();
                 }
+//              outputData = {count, lower bound, upper bound}
+                Object[] outputData = {approximateCount, confidenceInterval[0], confidenceInterval[1]};
+
+                complexEventPopulater.populateComplexEvent(streamEvent, outputData);
             }
         }
+
         nextProcessor.process(streamEventChunk);
     }
 

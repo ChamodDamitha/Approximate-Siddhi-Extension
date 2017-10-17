@@ -45,14 +45,16 @@ import java.util.Map;
 
 
 /**
- * Performs HyperLogLog algorithm to get the approximate distinctCount of events in a window.
+ * Performs HyperLogLog algorithm to get the approximate distinct count of events in a window.
  */
 @Extension(
         name = "distinctCount",
         namespace = "approximate",
         description = "Performs HyperLogLog algorithm on a window of streaming data set based on a " +
                 "specific relative error" +
-                " and a confidence value to calculate the number of distinct events.",
+                " and a confidence value to calculate the number of distinct events. " +
+                "If used without a window, the out of memory errors will occur. " +
+                "For usage without the window, use the approximate:distinctCountEver extension.",
         parameters = {
                 @Parameter(
                         name = "value",

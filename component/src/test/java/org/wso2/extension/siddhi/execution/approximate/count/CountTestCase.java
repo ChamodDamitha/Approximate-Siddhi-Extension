@@ -90,7 +90,7 @@ public class CountTestCase {
         Assert.assertTrue(eventArrived);
 
 //      confidence test
-        if ((double) validEvents / totalEventsArrived >= confidence) {
+        if ((double) validEvents / totalEventsArrived >= confidence) { //todo : assert condition
             Assert.assertEquals(true, true);
         } else {
             Assert.assertEquals(true, false);
@@ -108,12 +108,12 @@ public class CountTestCase {
         final double relativeError = 0.005;
 
         LOG.info("Approximate Count Test Case - to check the number of parameters " +
-                "passed to the count functions are lesser");
+                "passed to the count functions are not 1 or 3");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(" + windowLength + ")#approximate:count() " +
+                "from inputStream#window.length(" + windowLength + ")#approximate:count(number, 0.04) " +
                 "select * " +
                 "insert into outputStream;");
 
@@ -123,7 +123,7 @@ public class CountTestCase {
         } catch (Exception e) {
             exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
-            Assert.assertTrue(e.getCause().getMessage().contains("1 - 3 attributes are expected but 0 attributes" +
+            Assert.assertTrue(e.getCause().getMessage().contains("1 or 3 attributes are expected but 2 attributes" +
                     " are found inside the count function"));
         }
         Assert.assertEquals(true, exceptionOccurred);
@@ -141,7 +141,7 @@ public class CountTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(" + windowLength + ")#approximate:count(number, number) " +
+                "from inputStream#window.length(" + windowLength + ")#approximate:count(number, number, 0.96) " +
                 "select * " +
                 "insert into outputStream;");
         boolean exceptionOccurred = false;
@@ -164,12 +164,13 @@ public class CountTestCase {
         final double confidence = 0.75;
         final double relativeError = 0.005;
 
-        LOG.info("Approximate Count Test Case - to validate the 2nd parameter inside count function is a double");
+        LOG.info("Approximate Count Test Case - to validate the 2nd parameter inside " +
+                "count function is a double or float");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(" + windowLength + ")#approximate:count(number, '0.01') " +
+                "from inputStream#window.length(" + windowLength + ")#approximate:count(number, '0.01', 0.03) " +
                 "select * " +
                 "insert into outputStream;");
         boolean exceptionOccurred = false;
@@ -179,7 +180,7 @@ public class CountTestCase {
             exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 2nd parameter inside count function" +
-                    " - 'relative.error' should be of type Double but found STRING"));
+                    " - 'relative.error' should be of type Double or Float but found STRING"));
         }
         Assert.assertEquals(true, exceptionOccurred);
     }
@@ -197,7 +198,7 @@ public class CountTestCase {
 
         String inStreamDefinition = "define stream inputStream (number int);";
         String query = ("@info(name = 'query1') " +
-                "from inputStream#window.length(" + windowLength + ")#approximate:count(number, 1.01) " +
+                "from inputStream#window.length(" + windowLength + ")#approximate:count(number, 1.01, 0.9) " +
                 "select * " +
                 "insert into outputStream;");
         boolean exceptionOccurred = false;
@@ -247,7 +248,7 @@ public class CountTestCase {
         final double confidence = 0.75;
         final double relativeError = 0.005;
 
-        LOG.info("Approximate Count Test Case - to validate the 3rd parameter inside count function is a double");
+        LOG.info("Approximate Count Test Case - to validate the 3rd parameter inside count function is a double or float");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";
@@ -262,7 +263,7 @@ public class CountTestCase {
             exceptionOccurred = true;
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside count function" +
-                    " - 'confidence' should be of type Double but found STRING"));
+                    " - 'confidence' should be of type Double or Float but found STRING"));
         }
         Assert.assertEquals(true, exceptionOccurred);
     }
@@ -291,6 +292,35 @@ public class CountTestCase {
             Assert.assertTrue(e instanceof SiddhiAppCreationException);
             Assert.assertTrue(e.getCause().getMessage().contains("The 3rd parameter inside count function" +
                     " - 'confidence' must be in the range of (0, 1) but found -1.01"));
+        }
+        Assert.assertEquals(true, exceptionOccurred);
+    }
+
+    @Test
+    public void testApproximateCount_9() throws InterruptedException {
+        final int windowLength = 1000;
+
+        final double confidence = 0.75;
+        final double relativeError = 0.005;
+
+        LOG.info("Approximate Count Test Case - to validate the 1st parameter " +
+                "inside count function is a variable");
+        SiddhiManager siddhiManager = new SiddhiManager();
+
+        String inStreamDefinition = "define stream inputStream (number int);";
+        String query = ("@info(name = 'query1') " +
+                "from inputStream#window.length(" + windowLength + ")#approximate:count(12, 0.04, 0.99) " +
+                "select * " +
+                "insert into outputStream;");
+        boolean exceptionOccurred = false;
+        try {
+            SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(inStreamDefinition + query);
+        } catch (Exception e) {
+            exceptionOccurred = true;
+            Assert.assertTrue(e instanceof SiddhiAppCreationException);
+            Assert.assertTrue(e.getCause().getMessage().contains("The 1st parameter inside count function - " +
+                    "'value' has to be a variable but found" +
+                    " org.wso2.siddhi.core.executor.ConstantExpressionExecutor"));
         }
         Assert.assertEquals(true, exceptionOccurred);
     }

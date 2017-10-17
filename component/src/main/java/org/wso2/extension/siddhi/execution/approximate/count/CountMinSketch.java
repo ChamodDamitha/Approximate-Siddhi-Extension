@@ -20,6 +20,7 @@ package org.wso2.extension.siddhi.execution.approximate.count;
 import org.wso2.extension.siddhi.execution.approximate.distinctcount.MurmurHash;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -31,7 +32,7 @@ import java.util.Random;
  */
 public class CountMinSketch<E> implements Serializable {
 
-    private static final long serialVersionUID = -7485124336894867529L;
+    private static final long serialVersionUID = -3359695950348163739L;
 
     private int depth;
     private int width;
@@ -42,16 +43,15 @@ public class CountMinSketch<E> implements Serializable {
     private long[][] countArray;
 
     //  hash coefficients
-    private int[] hashCoefficientsA;
-    private int[] hashCoefficientsB;
+    private ArrayList<Integer> hashCoefficientsA;
+    private ArrayList<Integer> hashCoefficientsB;
 
-    //  Error factors of approximation
+    //  Error factor of approximation
     private double relativeError;
-    private double confidence;
 
 
     /**
-     * instantiate the count min sketch based on a given relativeError and confidence
+     * Instantiate the count min sketch based on a given relative error and confidence
      * approximate_answer - (relativeError * numberOfInsertions) <= actual_answer
      * <= approximate_answer + (relativeError * numberOfInsertions)
      *
@@ -67,7 +67,6 @@ public class CountMinSketch<E> implements Serializable {
         this.totalNoOfItems = 0;
 
         this.relativeError = relativeError;
-        this.confidence = confidence;
 
 //      depth = ln(1 / (1 - confidence))
         this.depth = (int) Math.ceil(Math.log(1 / (1 - confidence)));
@@ -79,12 +78,12 @@ public class CountMinSketch<E> implements Serializable {
 //      create random hash coefficients
 //      using linear hash functions of the form (a*x+b)
 //      a,b are chosen independently for each hash function.
-        this.hashCoefficientsA = new int[depth];
-        this.hashCoefficientsB = new int[depth];
+        this.hashCoefficientsA = new ArrayList<>(depth);
+        this.hashCoefficientsB = new ArrayList<>(depth);//TODO : change to array lists - done
         Random random = new Random(123);
         for (int i = 0; i < depth; i++) {
-            hashCoefficientsA[i] = random.nextInt(Integer.MAX_VALUE);
-            hashCoefficientsB[i] = random.nextInt(Integer.MAX_VALUE);
+            hashCoefficientsA.add(random.nextInt(Integer.MAX_VALUE));
+            hashCoefficientsB.add(random.nextInt(Integer.MAX_VALUE));
         }
     }
 
@@ -109,7 +108,7 @@ public class CountMinSketch<E> implements Serializable {
         int[] hashValues = new int[depth];
         int hash = MurmurHash.hash(item);
         for (int i = 0; i < depth; i++) {
-            hashValues[i] = hashCoefficientsA[i] * hash + hashCoefficientsB[i];
+            hashValues[i] = hashCoefficientsA.get(i) * hash + hashCoefficientsB.get(i);
         }
         return hashValues;
     }
@@ -123,25 +122,23 @@ public class CountMinSketch<E> implements Serializable {
      * @param item
      * @return the approximate count of the item
      */
-    public long insert(E item) {
+    public synchronized long insert(E item) {
         totalNoOfItems++;
 
         int[] hashValues = getHashValues(item);
         int index;
         long currentMin = Long.MAX_VALUE;
-        long currentVal;
+        // todo : remove currentVal - done
 
         for (int i = 0; i < depth; i++) {
             index = getArrayIndex(hashValues[i]);
-            currentVal = countArray[i][index];
-            countArray[i][index] = currentVal + 1;
-
-            if (currentMin > currentVal) {
-                currentMin = currentVal;
+            countArray[i][index]++;
+            if (currentMin > countArray[i][index]) {
+                currentMin = countArray[i][index];
             }
         }
 
-        return currentMin + 1;
+        return currentMin;
     }
 
     /**
@@ -153,24 +150,22 @@ public class CountMinSketch<E> implements Serializable {
      * @param item
      * @return the approximate count of the item
      */
-    public long remove(E item) {
+    public synchronized long remove(E item) {
         totalNoOfItems--;
 
         int[] hashValues = getHashValues(item);
         int index;
         long currentMin = Long.MAX_VALUE;
-        long currentVal;
 
         for (int i = 0; i < depth; i++) {
             index = getArrayIndex(hashValues[i]);
-            currentVal = countArray[i][index];
-            countArray[i][index] = currentVal - 1;
+            countArray[i][index]--;
 
-            if (currentMin > currentVal) {
-                currentMin = currentVal;
+            if (currentMin > countArray[i][index]) {
+                currentMin = countArray[i][index];
             }
         }
-        return currentMin - 1;
+        return currentMin;
     }
 
     /**
@@ -182,19 +177,19 @@ public class CountMinSketch<E> implements Serializable {
      * @return a long array which contains the lower bound and
      * the upper bound of the confidence interval consecutively
      */
-    public long[] getConfidenceInterval(long count) {
-        if (count - (long) (totalNoOfItems * relativeError) > 0) {
-            return new long[]{count - (long) (totalNoOfItems * relativeError),
-                    (long) (count + (totalNoOfItems * relativeError))};
+    public synchronized long[] getConfidenceInterval(long count) {
+        long error = (long) (totalNoOfItems * relativeError);
+        if (count - error > 0) { //todo : totalNoOfItems * relativeError to a var - done
+            return new long[]{count - error, count + error};
         } else {
-            return new long[]{0, (long) (count + (totalNoOfItems * relativeError))};
+            return new long[]{0, count + error};
         }
     }
 
     /**
      * Clears the counts within the sketch.
      */
-    public void clear() {
+    public synchronized void clear() {
         this.totalNoOfItems = 0;
         this.countArray = new long[depth][width];
     }

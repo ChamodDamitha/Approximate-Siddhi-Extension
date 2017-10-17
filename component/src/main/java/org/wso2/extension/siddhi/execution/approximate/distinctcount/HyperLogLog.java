@@ -29,7 +29,7 @@ import java.io.Serializable;
  */
 public class HyperLogLog<E> implements Serializable {
 
-    private static final long serialVersionUID = -1285124336894867529L;
+    private static final long serialVersionUID = -5295608198644134019L;
 
     private static final double STANDARD_ERROR = 1.04;
     private static final double POW_2_OF_32 = Math.pow(2, 32);

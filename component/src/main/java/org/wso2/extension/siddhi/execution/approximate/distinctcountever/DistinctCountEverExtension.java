@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.extension.siddhi.execution.approximate.ditinctcountever;
+package org.wso2.extension.siddhi.execution.approximate.distinctcountever;
 
 import org.apache.log4j.Logger;
 import org.wso2.extension.siddhi.execution.approximate.distinctcount.HyperLogLog;
@@ -46,13 +46,15 @@ import java.util.Map;
 
 
 /**
- * Performs HyperLogLog algorithm to get the approximate distinctCount of events in a stream.
+ * Performs HyperLogLog algorithm to get the approximate distinct count of events in a stream.
  */
 @Extension(
         name = "distinctCountEver",
         namespace = "approximate",
         description = "Performs HyperLogLog algorithm on a streaming data set based on a specific relative error" +
-                " and a confidence value to calculate the number of distinct events.",
+                " and a confidence value to calculate the number of distinct events. " +
+                "If used with a window, errorneous results will be returned. " +
+                "For usage with the window, use the approximate:distinctCount extension.",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -224,8 +226,6 @@ public class DistinctCountEverExtension extends StreamProcessor {
                 } else {
                     if (streamEvent.getType().equals(StreamEvent.Type.CURRENT)) {
                         hyperLogLog.addItem(newData);
-                    } else if (streamEvent.getType().equals(StreamEvent.Type.EXPIRED)) {
-                        hyperLogLog.removeItem(newData);
                     } else if (streamEvent.getType().equals(StreamEvent.Type.RESET)) {
                         hyperLogLog.clear();
                     }
