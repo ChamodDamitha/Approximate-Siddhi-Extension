@@ -18,7 +18,6 @@
 
 package org.wso2.extension.siddhi.execution.approximate.distinctcountever;
 
-import org.apache.log4j.Logger;
 import org.wso2.extension.siddhi.execution.approximate.distinctcount.HyperLogLog;
 import org.wso2.siddhi.annotation.Example;
 import org.wso2.siddhi.annotation.Extension;
@@ -33,6 +32,7 @@ import org.wso2.siddhi.core.event.stream.populater.ComplexEventPopulater;
 import org.wso2.siddhi.core.exception.SiddhiAppCreationException;
 import org.wso2.siddhi.core.executor.ConstantExpressionExecutor;
 import org.wso2.siddhi.core.executor.ExpressionExecutor;
+import org.wso2.siddhi.core.executor.VariableExpressionExecutor;
 import org.wso2.siddhi.core.query.processor.Processor;
 import org.wso2.siddhi.core.query.processor.stream.StreamProcessor;
 import org.wso2.siddhi.core.util.config.ConfigReader;
@@ -66,7 +66,7 @@ import java.util.Map;
                         name = "relative.error",
                         description = "This is the relative error for which the distinct count is obtained. " +
                                 "The values must be in the range of (0, 1).",
-                        type = {DataType.DOUBLE},
+                        type = {DataType.DOUBLE, DataType.FLOAT},
                         optional = true,
                         defaultValue = "0.01"
                 ),
@@ -74,7 +74,7 @@ import java.util.Map;
                         name = "confidence",
                         description = "This is the confidence for which the relative error is true. " +
                                 "The value must be one out of 0.65, 0.95, 0.99.",
-                        type = {DataType.DOUBLE},
+                        type = {DataType.DOUBLE, DataType.FLOAT},
                         optional = true,
                         defaultValue = "0.95"
                 )
@@ -137,7 +137,6 @@ import java.util.Map;
         }
 )
 public class DistinctCountEverExtension extends StreamProcessor {
-    private static final Logger logger = Logger.getLogger(DistinctCountEverExtension.class.getName());
     private HyperLogLog<Object> hyperLogLog;
 
     private ExpressionExecutor valueExecutor;
@@ -152,11 +151,21 @@ public class DistinctCountEverExtension extends StreamProcessor {
         double confidence = 0.95;
 
 //       validate number of attributes
-        if (!(attributeExpressionExecutors.length >= 1 && attributeExpressionExecutors.length <= 3)) {
-            throw new SiddhiAppCreationException("1 - 3 attributes are expected but " +
+        if (!(attributeExpressionExecutors.length == 1 || attributeExpressionExecutors.length == 3)) {
+            throw new SiddhiAppCreationException("1 or 3 attributes are expected but " +
                     attributeExpressionExecutors.length + " attributes are found inside the " +
                     "distinctCountEver function");
         }
+
+        //TODO : check for the variable - done
+        //expressionExecutors[0] --> value
+        if (!(attributeExpressionExecutors[0] instanceof VariableExpressionExecutor)) {
+            throw new SiddhiAppCreationException("The 1st parameter inside distinctCountEver function - " +
+                    "'value' has to be a variable but found " +
+                    this.attributeExpressionExecutors[0].getClass().getCanonicalName());
+        }
+        valueExecutor = attributeExpressionExecutors[0];
+
 
         //expressionExecutors[1] --> relativeError
         if (attributeExpressionExecutors.length > 1) {
@@ -167,11 +176,12 @@ public class DistinctCountEverExtension extends StreamProcessor {
                         this.attributeExpressionExecutors[1].getClass().getCanonicalName());
             }
 
-            if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE) {
+            if (attributeExpressionExecutors[1].getReturnType() == Attribute.Type.DOUBLE ||
+                    attributeExpressionExecutors[1].getReturnType() == Attribute.Type.FLOAT) {
                 relativeError = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[1]).getValue();
             } else {
                 throw new SiddhiAppCreationException("The 2nd parameter inside distinctCountEver function - " +
-                        "'relative.error' should be of type Double but found " +
+                        "'relative.error' should be of type Double or Float but found " +
                         attributeExpressionExecutors[1].getReturnType());
             }
 
@@ -189,11 +199,12 @@ public class DistinctCountEverExtension extends StreamProcessor {
                         this.attributeExpressionExecutors[2].getClass().getCanonicalName());
             }
 
-            if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE) {
+            if (attributeExpressionExecutors[2].getReturnType() == Attribute.Type.DOUBLE ||
+                    attributeExpressionExecutors[1].getReturnType() == Attribute.Type.FLOAT) {
                 confidence = (Double) ((ConstantExpressionExecutor) attributeExpressionExecutors[2]).getValue();
             } else {
                 throw new SiddhiAppCreationException("The 3rd parameter inside distinctCountEver function - " +
-                        "'confidence' should be of type Double but found " +
+                        "'confidence' should be of type Double or Float but found " +
                         attributeExpressionExecutors[2].getReturnType());
             }
 
@@ -204,7 +215,6 @@ public class DistinctCountEverExtension extends StreamProcessor {
             }
         }
 
-        valueExecutor = attributeExpressionExecutors[0];
         hyperLogLog = new HyperLogLog<>(relativeError, confidence, false);
 
         List<Attribute> attributeList = new ArrayList<>(3);

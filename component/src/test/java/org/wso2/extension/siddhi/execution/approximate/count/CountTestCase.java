@@ -246,7 +246,8 @@ public class CountTestCase {
         final double confidence = 0.75;
         final double relativeError = 0.005;
 
-        LOG.info("Approximate Count Test Case - to validate the 3rd parameter inside count function is a double or float");
+        LOG.info("Approximate Count Test Case - to validate the 3rd parameter " +
+                "inside count function is a double or float");
         SiddhiManager siddhiManager = new SiddhiManager();
 
         String inStreamDefinition = "define stream inputStream (number int);";

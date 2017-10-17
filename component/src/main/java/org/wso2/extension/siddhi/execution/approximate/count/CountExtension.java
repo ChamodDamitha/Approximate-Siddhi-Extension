@@ -51,7 +51,7 @@ import java.util.Map;
         namespace = "approximate",
         description = "Performs Count-min-sketch algorithm on a window of streaming data set based on a specific " +
                 "relative error and  a confidence value to calculate the approximate count(frequency) of events. " +
-                "Using without a window may return out of memory errors.", //TODO : mention about memory error - done
+                "Using without a window may return out of memory errors.",
         parameters = {
                 @Parameter(
                         name = "value",
@@ -63,7 +63,7 @@ import java.util.Map;
                         name = "relative.error",
                         description = "This is the relative error for which the count is obtained. " +
                                 "The values must be in the range of (0, 1).",
-                        type = {DataType.DOUBLE, DataType.FLOAT}, //TODO : type float - done
+                        type = {DataType.DOUBLE, DataType.FLOAT},
                         optional = true,
                         defaultValue = "0.01"
                 ),
@@ -78,7 +78,7 @@ import java.util.Map;
         },
         returnAttributes = {
                 @ReturnAttribute(
-                        name = "count", //TODO : mention per attribute count - done
+                        name = "count",
                         description = "Represents the approximate count per attribute considering the latest event",
                         type = {DataType.LONG}
                 ),
@@ -98,7 +98,7 @@ import java.util.Map;
         examples = {
 
                 @Example(
-                        syntax = "define stream requestStream (ip string);\n" + //TODO : change attribute to concrete one - done
+                        syntax = "define stream requestStream (ip string);\n" +
                                 "from requestStream#window.time(1000)#approximate:count(ip)\n" +
                                 "select count, countLowerBound, countUpperBound\n" +
                                 "insert into OutputStream;",
@@ -111,7 +111,7 @@ import java.util.Map;
                                 "The output will consist of the " +
                                 "approximate count of the latest event, lower bound and " +
                                 "upper bound of the approximate answer."
-                ), //TODO : example for 2 attribute case - no need
+                ),
                 @Example(
                         syntax = "define stream transactionStream (userId int, amount double);\n" +
                                 "from transactionStream#window.length(1000)#approximate:count(userId, 0.05, 0.9)\n" +
@@ -143,14 +143,12 @@ public class CountExtension extends StreamProcessor {
         double relativeError = 0.01;
         double confidence = 0.99;
 
-//TODO : neglect 2 attr case - done
 //       validate number of attributes
         if (!(attributeExpressionExecutors.length == 1 || attributeExpressionExecutors.length == 3)) {
             throw new SiddhiAppCreationException("1 or 3 attributes are expected but " +
                     attributeExpressionExecutors.length + " attributes are found inside the count function");
         }
 
-        //TODO : check for the variable - done
         //expressionExecutors[0] --> value
         if (!(attributeExpressionExecutors[0] instanceof VariableExpressionExecutor)) {
             throw new SiddhiAppCreationException("The 1st parameter inside count function - " +
@@ -219,7 +217,7 @@ public class CountExtension extends StreamProcessor {
     @Override
     protected void process(ComplexEventChunk<StreamEvent> streamEventChunk, Processor processor,
                            StreamEventCloner streamEventCloner, ComplexEventPopulater complexEventPopulater) {
-        //TODO : make approximateCount method var, move synchronized to countmin sketch - done
+
         long approximateCount = 0;
         long[] confidenceInterval = new long[2];
 

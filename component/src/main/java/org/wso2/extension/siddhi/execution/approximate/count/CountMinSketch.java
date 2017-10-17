@@ -79,7 +79,7 @@ public class CountMinSketch<E> implements Serializable {
 //      using linear hash functions of the form (a*x+b)
 //      a,b are chosen independently for each hash function.
         this.hashCoefficientsA = new ArrayList<>(depth);
-        this.hashCoefficientsB = new ArrayList<>(depth);//TODO : change to array lists - done
+        this.hashCoefficientsB = new ArrayList<>(depth);
         Random random = new Random(123);
         for (int i = 0; i < depth; i++) {
             hashCoefficientsA.add(random.nextInt(Integer.MAX_VALUE));
@@ -128,7 +128,6 @@ public class CountMinSketch<E> implements Serializable {
         int[] hashValues = getHashValues(item);
         int index;
         long currentMin = Long.MAX_VALUE;
-        // todo : remove currentVal - done
 
         for (int i = 0; i < depth; i++) {
             index = getArrayIndex(hashValues[i]);
@@ -179,7 +178,7 @@ public class CountMinSketch<E> implements Serializable {
      */
     public synchronized long[] getConfidenceInterval(long count) {
         long error = (long) (totalNoOfItems * relativeError);
-        if (count - error > 0) { //todo : totalNoOfItems * relativeError to a var - done
+        if (count - error > 0) {
             return new long[]{count - error, count + error};
         } else {
             return new long[]{0, count + error};
